@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def generate_classes():
     n_points = 100
     mA = np.array([ 1.0, 0.5])
-    mB = np.array([-1.0, 0.5])
+    mB = np.array([-1.2, 0.5])
     sigmaA = 0.5
     sigmaB = 0.5
 
@@ -22,9 +22,8 @@ def generate_classes():
 
 def plot_classes(classes):
     for idx, c in enumerate(classes):
-        color = 'C' + str(idx)
-        
-
+        color = 'C' + str(idx) + 'o'
+        plt.plot(c[0,:], c[1,:], color)
     plt.show()
 
 
