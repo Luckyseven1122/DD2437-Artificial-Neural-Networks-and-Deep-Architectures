@@ -3,31 +3,47 @@ import matplotlib.pyplot as plt
 
 
 
-
-def generate_classes():
+def generate_binary_data():
+    '''
+    Generates two classes of points
+    Note: axis are set between -3 and 3 on both axis
+    Note: Labels (-1, 1)
+    '''
     n_points = 100
-    mA = np.array([ 1.0, 0.5])
-    mB = np.array([-1.2, 0.5])
+    mA = np.array([ 1.3, 0.5])
+    mB = np.array([-1.3, -0.5])
     sigmaA = 0.5
     sigmaB = 0.5
 
-    classA = np.zeros([2, n_points])
-    classB = np.zeros([2, n_points])
-    classA[0,:] = np.random.randn(1, n_points) * sigmaA + mA[0]
-    classA[1,:] = np.random.randn(1, n_points) * sigmaA + mA[1]
-    classB[0,:] = np.random.randn(1, n_points) * sigmaB + mB[0]
-    classB[1,:] = np.random.randn(1, n_points) * sigmaB + mB[1]
-    return classA, classB
+    x = np.zeros([3, n_points*2])
+    x[0,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[0]
+    x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
+    x[2,:n_points] = -1
+    x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
+    x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
+    x[2,n_points:] = 1
 
+    # shuffle columns in x
+    X = np.zeros([3, n_points*2])
+    Y = np.zeros([n_points*2])
+    idx = np.random.permutation(n_points*2)
+    for i in idx:
+        X[:2,i] = x[:2,i]
+        X[2,i] = 1
+        Y[i] = x[2,i]
 
-def plot_classes(classes):
-    for idx, c in enumerate(classes):
-        color = 'C' + str(idx) + 'o'
-        plt.plot(c[0,:], c[1,:], color)
+    Y = Y.astype(int)
+    return X, Y
+
+def plot_classes(X, Y):
+    # force axis for "real-time" update in learning step
+    plt.axis([-3, 3, -3, 3])
+    plt.scatter(X[0,:], X[1,:], c=Y)
     plt.show()
 
 
-classA, classB = generate_classes()
+
+X, Y = generate_binary_data()
 
 
-plot_classes([classA, classB])
+plot_classes(X, Y)
