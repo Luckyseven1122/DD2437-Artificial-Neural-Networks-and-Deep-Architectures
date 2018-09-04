@@ -18,7 +18,7 @@ def generate_binary_data():
     x = np.zeros([3, n_points*2])
     x[0,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[0]
     x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
-    x[2,:n_points] = -1
+    x[2,:n_points] = 0
     x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
     x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
     x[2,n_points:] = 1
@@ -42,16 +42,22 @@ def plot_classes(X, Y):
     plt.show()
 
 
-def draw_line(W, X):
-    T = np.sum(W * X, axis=1, keepdims=True)
+def line(W, x):
+    k = -(W.T[2]/W.T[1])/(W.T[2]/W.T[0])
+    m = -W.T[2]/W.T[1]
+    return k*x+m
 
-    x = np.arange(-4, 4, 1)
-    y = np.arange(-4, 4, 1)
+def draw_line(W, X):
+    x = [-4, 4]
+    y = [line(W, x[0]), line(W, x[1])]
+    plt.plot(x, y)
+
+
 
 
 
 def generate_weights(X):
-    W = np.random.normal(0, 0.001, X.shape)
+    W = np.random.normal(0, 0.001, (1, X.shape[0]))
     return W
 
 
@@ -64,22 +70,15 @@ Perceptron Learning
 '''
 
 def Perceptron(X, Y, W, eta, n_epochs):
-
     draw_line(W, X)
     plot_classes(X, Y)
-
     for i in range(0, n_epochs):
-        T = np.sum(W * X, axis=0, keepdims=True)
-        _T = T.copy()
-        T = np.where(T > 0, T, -1)
-        T[T > 0] = 1
-        T = T.astype(int)
-        T = np.equal(T, Y)
+        T = np.dot(W, X)
+        T = np.where(T > 0, 1, 0)
+        W -= eta * np.dot(T-Y, X.T)
 
-        for i, t in enumerate(T[0]):
-            if t == True:
-                W[:,i] = W[:,i] + eta*(T[0,i]-Y[0,i])*X[:,i]
+        draw_line(W, X)
+        plot_classes(X, Y)
 
 
-
-Perceptron(X, Y, W, 0.02, 4)
+Perceptron(X, Y, W, 0.02, 200)
