@@ -37,7 +37,7 @@ def generate_binary_data():
 
 def plot_classes(X, Y):
     # force axis for "real-time" update in learning step
-    #plt.axis([-3, 3, -3, 3])
+    plt.axis([-3, 3, -3, 3])
     plt.scatter(X[0,:], X[1,:], c=Y[0,:])
     plt.show()
 
@@ -71,8 +71,9 @@ Perceptron Learning
 
 def compute_cost(W, X, Y):
     T = np.dot(W, X)
-    T = np.where(T > 0, 1, -1)
-    return np.sum((Y - T))
+    T = np.where(T > 0, -1, 1)
+    T = np.where((Y-T) != 0, 1, 0)
+    return np.sum(T)
 
 
 
@@ -91,20 +92,18 @@ def perceptron(X, Y, W, eta, n_epochs, delta_rule=False, use_batch=True):
     for i in range(0, n_epochs):
         if use_batch:
             T = np.dot(W, X)
-            T = np.where(T > 0, 1, -1)
+            T = np.where(T > 0, -1, 1)
             W += weigth_update(X, Y, W, T, eta, delta_rule)
         else:
             for i in range(X.shape[1]):
                 x = X[:,i,None]
                 y = Y[:,i,None]
                 T = np.dot(W, x)
-                T = np.where(T > 0, 1, -1)
+                T = np.where(T > 0, -1, 1)
                 W += weigth_update(x, y, W, T, eta, delta_rule)
-
         print("Error:", compute_cost(W, X, Y))
-
-    draw_line(W, X)
-    plot_classes(X, Y)
+        draw_line(W, X)
+        plot_classes(X, Y)
 
 
 perceptron(X, Y, W, 0.01, 5, delta_rule=False, use_batch=False)
