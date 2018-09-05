@@ -37,18 +37,18 @@ def generate_binary_data(bias = True):
     return X, Y
 
 def plot_classes(X, Y):
-    # force axis for "real-time" update in learning step
-    plt.axis([-3, 3, -3, 3])
-    plt.grid(True)
-    plt.scatter(X[0,:], X[1,:], c=Y[0,:])
-    plt.show()
+        # force axis for "real-time" update in learning step
+        plt.axis([-3, 3, -3, 3])
+        plt.grid(True)
+        plt.scatter(X[0,:], X[1,:], c=Y[0,:])
+        plt.show()
 
 
 def line(W, x):
-    #k = -(W.T[2]/W.T[1])/(W.T[2]/W.T[0])
-    k = -(W.T[0]/W.T[1])
-    m = -W.T[2]/W.T[1]
-    return k*x+m
+        #k = -(W.T[2]/W.T[1])/(W.T[2]/W.T[0])
+        k = -(W.T[0]/W.T[1])
+        m = -W.T[2]/W.T[1]
+        return k*x+m
 
 def draw_line(W, X):
     x = [-4, 4]
@@ -60,17 +60,16 @@ def plot_cost(cost, epochs):
     x = np.arange(0, epochs)
 
 
-    #plt.clf()
     plt.plot(x, cost, 'r')
     plt.pause(2000)
     plt.show()
 
 
 def generate_weights(X):
-    W = np.random.normal(0, 0.01, (1, X.shape[0]))
-    if X[2,0] == 0:
-       W.T[2] = 0
-    return W
+        W = np.random.normal(0, 0.01, (1, X.shape[0]))
+        if X[2,0] == 0:
+           W.T[2] = 0
+        return W
 
 
 
@@ -80,23 +79,22 @@ Perceptron Learning
 
 def compute_cost(W, X, Y, delta_rule=True):
     if delta_rule:
-    	e = Y-np.dot(W, X)
-    	return np.mean(e*e)/2
+        e = Y-np.dot(W, X)
+        return np.mean(e*e)/2
     else: 
-    	return np.mean(np.dot(W,X)-Y)
-
+        return np.mean(np.dot(W,X)-Y)
 
 
 
 def weigth_update(X, Y, W, T, eta, delta_rule=False):
-    if not delta_rule:
-        dW = eta * np.dot(T-Y, X.T)
-        #dW = -eta * np.dot(Y-T, X.T)
-    else:
-        e = T - np.dot(W, X)
-        dW = eta * np.dot(e, X.T)
-        #dW = -eta * np.dot((np.dot(W, X) - T), X.T)
-    return dW
+        if not delta_rule:
+                dW = eta * np.dot(T-Y, X.T)
+                #dW = -eta * np.dot(Y-T, X.T)
+        else:
+                e = T - np.dot(W, X)
+                dW = eta * np.dot(e, X.T)
+                #dW = -eta * np.dot((np.dot(W, X) - T), X.T)
+        return dW
 
 def perceptron(X, Y, W, eta, n_epochs, delta_rule=False, use_batch=True):
 
