@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 
-def generate_binary_data():
+def generate_binary_data(bias = True):
     '''
     Generates two classes of points
     Note: axis are set between -3 and 3 on both axis
@@ -11,7 +11,7 @@ def generate_binary_data():
     '''
     n_points = 100
     mA = np.array([ 1.3, 0.5])
-    mB = np.array([-1.5, -0.5])
+    mB = np.array([-1.2, -0.5])
     sigmaA = 0.5
     sigmaB = 0.5
 
@@ -29,21 +29,24 @@ def generate_binary_data():
     idx = np.random.permutation(n_points*2)
     for i in idx:
         X[:2,i] = x[:2,i]
-        X[2,i] = 1 # used later on as bias term multipyer
+        X[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
         Y[0,i] = x[2,i]
 
     Y = Y.astype(int)
+
     return X, Y
 
 def plot_classes(X, Y):
     # force axis for "real-time" update in learning step
     plt.axis([-3, 3, -3, 3])
+    plt.grid(True)
     plt.scatter(X[0,:], X[1,:], c=Y[0,:])
     plt.show()
 
 
 def line(W, x):
-    k = -(W.T[2]/W.T[1])/(W.T[2]/W.T[0])
+    #k = -(W.T[2]/W.T[1])/(W.T[2]/W.T[0])
+    k = -(W.T[0]/W.T[1])
     m = -W.T[2]/W.T[1]
     return k*x+m
 
@@ -58,10 +61,12 @@ def draw_line(W, X):
 
 def generate_weights(X):
     W = np.random.normal(0, 0.01, (1, X.shape[0]))
+    if X[2,0] == 0:
+       W.T[2] = 0
     return W
 
 
-X, Y = generate_binary_data()
+X, Y = generate_binary_data(bias = True)
 W = generate_weights(X)
 
 
@@ -106,4 +111,4 @@ def perceptron(X, Y, W, eta, n_epochs, delta_rule=False, use_batch=True):
         plot_classes(X, Y)
 
 
-perceptron(X, Y, W, 0.01, 5, delta_rule=False, use_batch=False)
+perceptron(X, Y, W, 0.01, 20, delta_rule=False, use_batch=False)
