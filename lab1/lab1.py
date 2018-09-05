@@ -21,7 +21,7 @@ def generate_binary_data(bias = True):
     x[2,:n_points] = 1
     x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
     x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
-    x[2,n_points:] = 0
+    x[2,n_points:] = -1
 
     # shuffle columns in x
     X = np.zeros([3, n_points*2])
@@ -38,7 +38,7 @@ def generate_binary_data(bias = True):
 
 def plot_classes(X, Y):
         # force axis for "real-time" update in learning step
-        plt.axis([-3, 3, -3, 3])
+        # plt.axis([-3, 3, -3, 3])
         plt.grid(True)
         plt.scatter(X[0,:], X[1,:], c=Y[0,:])
         plt.show()
@@ -55,13 +55,13 @@ def draw_line(W, X):
     y = [line(W, x[0]), line(W, x[1])]
     plt.plot(x, y)
     plt.pause(0.01)
+    plt.show()
 
 def plot_cost(cost, epochs):
     x = np.arange(0, epochs)
 
-
     plt.plot(x, cost, 'r')
-    plt.pause(2000)
+    plt.pause(2)
     plt.show()
 
 
@@ -103,20 +103,24 @@ def perceptron(X, Y, W, eta, n_epochs, delta_rule=False, use_batch=True):
     for i in range(0, n_epochs):
         if use_batch:
             T = np.dot(W, X)
-            T = np.where(T > 0, 1, 0)
-            W += weigth_update(X, Y, W, T, eta, delta_rule)
+            T = np.where(T > 0, 1, -1)
+            W +=weigth_update(X, Y, W, T, eta, delta_rule)
         else:
             for i in range(X.shape[1]):
                 x = X[:,i,None]
                 y = Y[:,i,None]
                 T = np.dot(W, x)
-                T = np.where(T > 0, 1, 0)
+                T = np.where(T > 0, 1, -1)
                 W += weigth_update(x, y, W, T, eta, delta_rule)
         print("Error:", compute_cost(W, X, Y, delta_rule))
         cost.append(compute_cost(W, X, Y, delta_rule))
-        draw_line(W, X)
-        plot_classes(X, Y)
-    #plot_cost(cost, n_epochs)
+        # plot_classes(X, Y)
+        # draw_line(W, X)
+        # plt.clf()
+        # print(W)
+    plt.clf()
+    # plot_classes(X, Y)
+    plot_cost(cost, n_epochs)
 
 plt.ion()
 plt.show()
@@ -126,6 +130,6 @@ W = generate_weights(X)
 #perceptron_W = W.copy()
 #perceptron(X, Y, W, 0.01, 4, delta_rule=False, use_batch=False)
 delta_W = W.copy()
-perceptron(X, Y, delta_W, 0.000001, 35, delta_rule=True, use_batch=True)
+perceptron(X, Y, delta_W, 0.0001, 1000, delta_rule=True, use_batch=True)
 
-plt.show()
+plt.show(block=True)
