@@ -73,7 +73,7 @@ def compute_cost(W, X, Y):
     T = np.dot(W, X)
     T = np.where(T > 0, -1, 1)
     T = np.where((Y-T) != 0, 1, 0)
-    return np.sum(T)
+    return np.mean(T)
 
 
 
