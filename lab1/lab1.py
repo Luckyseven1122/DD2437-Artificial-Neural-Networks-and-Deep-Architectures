@@ -28,9 +28,9 @@ def generate_binary_data(bias = True):
     Y = np.zeros([1, n_points*2])
     idx = np.random.permutation(n_points*2)
     for i in idx:
-        X[:2,i] = x[:2,i]
+        X[:2,i] = x[:2,idx[i]]
         X[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
-        Y[0,i] = x[2,i]
+        Y[0,i] = x[2,idx[i]]
 
     Y = Y.astype(int)
 
@@ -81,7 +81,7 @@ def compute_cost(W, X, Y, delta_rule=True):
     if delta_rule:
         e = Y-np.dot(W, X)
         return np.mean(e*e)/2
-    else: 
+    else:
         return np.mean(np.dot(W,X)-Y)
 
 
