@@ -55,8 +55,13 @@ def draw_line(W, X):
     y = [line(W, x[0]), line(W, x[1])]
     plt.plot(x, y)
 
+def plot_cost(cost, epochs):
+	x = np.arange(0, epochs)
 
 
+	#plt.clf()
+	plt.plot(x, cost, 'r')
+	plt.show()
 
 
 def generate_weights(X):
@@ -66,19 +71,23 @@ def generate_weights(X):
     return W
 
 
-X, Y = generate_binary_data(bias = True)
-W = generate_weights(X)
-
 
 '''
 Perceptron Learning
 '''
 
-def compute_cost(W, X, Y):
-    T = np.dot(W, X)
-    T = np.where(T > 0, -1, 1)
-    T = np.where((Y-T) != 0, 1, 0)
-    return np.mean(T)
+def compute_cost(W, X, Y, delta_rule=True):
+    #T = np.dot(W, X)
+    #T = np.where(T > 0, -1, 1)
+    #T = np.where((Y-T) != 0, 1, 0)
+    #return np.mean(T)
+
+    if delta_rule:
+    	e = Y-np.dot(W, X)
+    	return (e*e/2).mean()
+    else: 
+    	return (T-Y).mean()
+
 
 
 
@@ -94,6 +103,8 @@ def weigth_update(X, Y, W, T, eta, delta_rule=False):
 
 def perceptron(X, Y, W, eta, n_epochs, delta_rule=False, use_batch=True):
 
+    cost = []
+
     for i in range(0, n_epochs):
         if use_batch:
             T = np.dot(W, X)
@@ -107,8 +118,17 @@ def perceptron(X, Y, W, eta, n_epochs, delta_rule=False, use_batch=True):
                 T = np.where(T > 0, -1, 1)
                 W += weigth_update(x, y, W, T, eta, delta_rule)
         print("Error:", compute_cost(W, X, Y))
+        cost.append(compute_cost(W, X, Y))
         draw_line(W, X)
         plot_classes(X, Y)
+    #plot_cost(cost, n_epochs)
 
 
-perceptron(X, Y, W, 0.01, 20, delta_rule=False, use_batch=False)
+
+X, Y = generate_binary_data(bias = True)
+W = generate_weights(X)
+#perceptron_W = W.copy()
+#perceptron(X, Y, W, 0.01, 4, delta_rule=False, use_batch=False)
+delta_W = W.copy()
+perceptron(X, Y, delta_W, 0.01, 15, delta_rule=True, use_batch=True)
+
