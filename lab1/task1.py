@@ -1,40 +1,75 @@
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 
 
 
-def generate_binary_data(bias = True, symmetric_labels=False):
-    '''
-    Generates two classes of points
-    Note: axis are set between -3 and 3 on both axis
-    Note: Labels (-1, 1)
-    '''
-    n_points = 100
-    mA = np.array([ 1.3, 0.5])
-    mB = np.array([-1.2, -0.5])
-    sigmaA = 0.5
-    sigmaB = 0.5
+def generate_binary_data(bias = True, symmetric_labels=False, linear=True):
 
-    x = np.zeros([3, n_points*2])
-    x[0,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[0]
-    x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
-    x[2,:n_points] = -1 if symmetric_labels==True else 0
-    x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
-    x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
-    x[2,n_points:] = 1
 
-    # shuffle columns in x
-    inputs = np.zeros([3, n_points*2])
-    labels = np.zeros([1, n_points*2])
-    idx = np.random.permutation(n_points*2)
-    for i in idx:
-        inputs[:2,i] = x[:2,idx[i]]
-        inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
-        labels[0,i] = x[2,idx[i]]
+    if linear:
+        '''
+        Generates two linearly separable classes of points
+        Note: axis are set between -3 and 3 on both axis
+        Note: Labels (-1, 1)
+        '''
+        n_points = 100
+        mA = np.array([ 1.0, 0.5])
+        mB = np.array([-1.0, -0.5])
+        sigmaA = 0.4
+        sigmaB = 0.4
 
-    labels = labels.astype(int)
+        x = np.zeros([3, n_points*2])
+        x[0,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[0]
+        x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
+        x[2,:n_points] = -1 if symmetric_labels==True else 0
+        x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
+        x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
+        x[2,n_points:] = 1
 
-    return inputs, labels
+        # shuffle columns in x
+        inputs = np.zeros([3, n_points*2])
+        labels = np.zeros([1, n_points*2])
+        idx = np.random.permutation(n_points*2)
+        for i in idx:
+            inputs[:2,i] = x[:2,idx[i]]
+            inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
+            labels[0,i] = x[2,idx[i]]
+
+        labels = labels.astype(int)
+
+        return inputs, labels
+    else:
+        '''
+        Generates two non-linearly separable classes of points
+        '''
+        n_points = 100
+        mA = [ 1.0, 0.3]
+        mB = [ 0.0, -0.1]
+        sigmaA = 0.2
+        sigmaB = 0.3
+
+        x = np.zeros([3, n_points*2])
+        x[0,:math.floor(n_points/2)] = np.random.randn(1, math.floor(n_points/2)) * sigmaA - mA[0]
+        x[0,math.floor(n_points/2):n_points] = np.random.randn(1, math.floor(n_points/2)) * sigmaA + mA[0]
+        x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
+        x[2,:n_points] = -1 if symmetric_labels==True else 0
+        x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
+        x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
+        x[2,n_points:] = 1
+
+        # shuffle columns in x
+        inputs = np.zeros([3, n_points*2])
+        labels = np.zeros([1, n_points*2])
+        idx = np.random.permutation(n_points*2)
+        for i in idx:
+            inputs[:2,i] = x[:2,idx[i]]
+            inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
+            labels[0,i] = x[2,idx[i]]
+
+        labels = labels.astype(int)
+
+        return inputs, labels
 
 
 def generate_weights(inputs):
@@ -143,7 +178,7 @@ NOTES:
  - not using batch and no delta rule makes model wiggle
 '''
 
-inputs, labels = generate_binary_data(bias=True, symmetric_labels=False)
+inputs, labels = generate_binary_data(bias=True, symmetric_labels=False, linear=False)
 W = generate_weights(inputs)
 
 perceptron(inputs, labels, W, 35, 0.0001, delta_rule=False, use_batch=True)
