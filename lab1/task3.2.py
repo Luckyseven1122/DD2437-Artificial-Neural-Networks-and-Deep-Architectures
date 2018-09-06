@@ -11,7 +11,7 @@ def generate_binary_data(bias = True, symmetric_labels=False):
     '''
     n_points = 100
     mA = np.array([ 1.3, 0.5])
-    mB = np.array([-1.2, -0.5])
+    mB = np.array([-1.0, -0.5])
     sigmaA = 0.5
     sigmaB = 0.5
 
@@ -24,12 +24,12 @@ def generate_binary_data(bias = True, symmetric_labels=False):
     x[2,n_points:] = 1
 
     # shuffle columns in x
-    inputs = np.zeros([3, n_points*2])
+    inputs = np.zeros([2, n_points*2])
     labels = np.zeros([1, n_points*2])
     idx = np.random.permutation(n_points*2)
     for i in idx:
         inputs[:2,i] = x[:2,idx[i]]
-        inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
+        #inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
         labels[0,i] = x[2,idx[i]]
 
     labels = labels.astype(int)
@@ -38,18 +38,18 @@ def generate_binary_data(bias = True, symmetric_labels=False):
 
 
 def generate_weights(inputs, hidden_nodes):
-    W = [np.random.normal(0, 0.001, (hidden_nodes, inputs.shape[0])),
+    W = [np.random.normal(0, 0.001, (hidden_nodes, inputs.shape[0] + 1)),
          np.random.normal(0, 0.001, (1, hidden_nodes))]
 
     # Set bias weight to zero
-    if inputs[2,0] == 0:
-       W[0,2] = 0
+    #if inputs[2,0] == 0:
+    #   W[0,2] = 0
     return W
 
 def plot_classes(inputs, labels):
     # force axis for "real-time" update in learning step
-    plt.clf()
-    plt.axis([-3, 3, -3, 3])
+    #plt.clf()
+    #plt.axis([-3, 3, -3, 3])
     plt.grid(True)
     plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
     plt.show()
@@ -84,13 +84,31 @@ def plot_cost(cost, epochs, delta_rule, use_batch):
     plt.show()
 
 
+def plot_decision_boundary(X, pred_func):
+
+    # Set min and max values and give it some padding
+    x_min, x_max = X[0, :].min() - .5, X[0, :].max() + .5
+    y_min, y_max = X[1, :].min() - .5, X[1, :].max() + .5
+    h = 0.01
+
+    # Generate a grid of points with distance h between them
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+
+    # Predict the function value for the whole gid
+    Z = pred_func(np.c_[xx.ravel(), yy.ravel()].T)
+    Z = Z.reshape(xx.shape)
+
+    # Plot the contour and training examples
+    plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
+    #plt.scatter(X[:, 0], X[:, 1], c=[0,1], cmap=plt.cm.Spectral)
+
 
 
 def transfer(H):
     return (2 / (1+np.exp(-H))) - 1
 
 def forward_pass(W, inputs):
-    H = np.dot(W[0], inputs)
+    H = np.dot(W[0], np.concatenate((inputs, np.ones((1, inputs.shape[1])))))
     H = transfer(H)
     O = np.dot(W[1], H)
     O = transfer(O)
@@ -111,20 +129,19 @@ def update_weights(inputs, H, dO, dH, eta, W_momentum, use_momentum=False):
         dW = [W_momentum[0] * eta,
               W_momentum[1] * eta]
     else:
-        dW = [-eta * np.dot(dH, inputs.T),
+        dW = [-eta * np.dot(dH, np.concatenate((inputs, np.ones((1, inputs.shape[1])))).T),
               -eta * np.dot(dO, H.T)]
+
     return dW, W_momentum
 
 def compute_cost(O, labels):
     return np.sum((labels - O)**2)/2
 
 def predict(W, inputs):
-    _, O = forward_pass(W, inputs)
+    H, O = forward_pass(W, inputs)
     return H
 
 def perceptron(inputs, labels, W, epochs, eta, use_batch=True, use_momentum=False):
-
-    plot_classes(inputs, labels)
     cost = []
     W_momentum = [np.zeros(W[0].shape), np.zeros(W[1].shape)]
     for i in range(epochs):
@@ -136,7 +153,8 @@ def perceptron(inputs, labels, W, epochs, eta, use_batch=True, use_momentum=Fals
         print(compute_cost(O, labels))
         #plot_classes(inputs, labels)
         #draw_line(W)
-
+    plot_decision_boundary(inputs, lambda x: predict(W, x))
+    plot_classes(inputs, labels)
 plt.ion()
 plt.show()
 
