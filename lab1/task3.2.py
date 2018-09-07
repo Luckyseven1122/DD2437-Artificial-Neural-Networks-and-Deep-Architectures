@@ -13,8 +13,8 @@ def generate_binary_data(bias = True, symmetric_labels=False, linear=True):
         Note: Labels (-1, 1)
         '''
         n_points = 100
-        mA = np.array([ 1.0, 0.5])
-        mB = np.array([-1.0, -0.5])
+        mA = np.array([ 1.5, 0.5])
+        mB = np.array([-1.5, -0.5])
         sigmaA = 0.4
         sigmaB = 0.4
 
@@ -44,9 +44,9 @@ def generate_binary_data(bias = True, symmetric_labels=False, linear=True):
         '''
         n_points = 100
         mA = [ 1.0, 0.3]
-        mB = [ 0.0, -0.1]
-        sigmaA = 0.2
-        sigmaB = 0.3
+        mB = [ 0.0, 0.0]
+        sigmaA = 0.1
+        sigmaB = 0.1
 
         x = np.zeros([3, n_points*2])
         x[0,:math.floor(n_points/2)] = np.random.randn(1, math.floor(n_points/2)) * sigmaA - mA[0]
@@ -118,18 +118,18 @@ def plot_cost(cost, epochs, delta_rule, use_batch):
     plt.show()
 
 
-def plot_decision_boundary(X, pred_func):
-
+def plot_decision_boundary(X, predict):
     # Set min and max values and give it some padding
     x_min, x_max = X[0, :].min() - .5, X[0, :].max() + .5
     y_min, y_max = X[1, :].min() - .5, X[1, :].max() + .5
     h = 0.01
 
+
     # Generate a grid of points with distance h between them
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
 
-    # Predict the function value for the whole gid
-    Z = pred_func(np.c_[xx.ravel(), yy.ravel()].T)
+    # Predict the function value for the whole grid
+    Z = predict(np.c_[xx.ravel(), yy.ravel()].T)
     Z = Z.reshape(xx.shape)
 
     # Plot the contour and training examples
@@ -173,7 +173,7 @@ def compute_cost(O, labels):
     return np.sum((labels - O)**2)/2
 
 def predict(W, inputs):
-    O, H = forward_pass(W, inputs)
+    O, _ = forward_pass(W, inputs)
     return O
 
 def perceptron(inputs, labels, W, epochs, eta, use_batch=True, use_momentum=False):
@@ -202,7 +202,7 @@ NOTES:
 '''
 
 inputs, labels = generate_binary_data(bias=True, symmetric_labels=True, linear=False)
-W = generate_weights(inputs, 6)
+W = generate_weights(inputs, 50)
 
 perceptron(inputs, labels, W, 100, 0.01, use_batch=True, use_momentum=False)
 
