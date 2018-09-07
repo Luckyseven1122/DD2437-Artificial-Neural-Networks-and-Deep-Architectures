@@ -1,45 +1,79 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 
+def generate_binary_data(bias = True, symmetric_labels=False, linear=True):
 
-def generate_binary_data(bias = True, symmetric_labels=False):
-    '''
-    Generates two classes of points
-    Note: axis are set between -3 and 3 on both axis
-    Note: Labels (-1, 1)
-    '''
-    n_points = 100
-    mA = np.array([ 1.3, 0.5])
-    mB = np.array([-1.0, -0.5])
-    sigmaA = 0.5
-    sigmaB = 0.5
 
-    x = np.zeros([3, n_points*2])
-    x[0,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[0]
-    x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
-    x[2,:n_points] = -1 if symmetric_labels==True else 0
-    x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
-    x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
-    x[2,n_points:] = 1
+    if linear:
+        '''
+        Generates two linearly separable classes of points
+        Note: axis are set between -3 and 3 on both axis
+        Note: Labels (-1, 1)
+        '''
+        n_points = 100
+        mA = np.array([ 1.0, 0.5])
+        mB = np.array([-1.0, -0.5])
+        sigmaA = 0.4
+        sigmaB = 0.4
 
-    # shuffle columns in x
-    inputs = np.zeros([2, n_points*2])
-    labels = np.zeros([1, n_points*2])
-    idx = np.random.permutation(n_points*2)
-    for i in idx:
-        inputs[:2,i] = x[:2,idx[i]]
-        #inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
-        labels[0,i] = x[2,idx[i]]
+        x = np.zeros([3, n_points*2])
+        x[0,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[0]
+        x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
+        x[2,:n_points] = -1 if symmetric_labels==True else 0
+        x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
+        x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
+        x[2,n_points:] = 1
 
-    labels = labels.astype(int)
+        # shuffle columns in x
+        inputs = np.zeros([2, n_points*2])
+        labels = np.zeros([1, n_points*2])
+        idx = np.random.permutation(n_points*2)
+        for i in idx:
+            inputs[:2,i] = x[:2,idx[i]]
+            #inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
+            labels[0,i] = x[2,idx[i]]
 
-    return inputs, labels
+        labels = labels.astype(int)
+
+        return inputs, labels
+    else:
+        '''
+        Generates two non-linearly separable classes of points
+        '''
+        n_points = 100
+        mA = [ 1.0, 0.3]
+        mB = [ 0.0, -0.1]
+        sigmaA = 0.2
+        sigmaB = 0.3
+
+        x = np.zeros([3, n_points*2])
+        x[0,:math.floor(n_points/2)] = np.random.randn(1, math.floor(n_points/2)) * sigmaA - mA[0]
+        x[0,math.floor(n_points/2):n_points] = np.random.randn(1, math.floor(n_points/2)) * sigmaA + mA[0]
+        x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
+        x[2,:n_points] = -1 if symmetric_labels==True else 0
+        x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
+        x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
+        x[2,n_points:] = 1
+
+        # shuffle columns in x
+        inputs = np.zeros([2, n_points*2])
+        labels = np.zeros([1, n_points*2])
+        idx = np.random.permutation(n_points*2)
+        for i in idx:
+            inputs[:2,i] = x[:2,idx[i]]
+            #inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
+            labels[0,i] = x[2,idx[i]]
+
+        labels = labels.astype(int)
+
+        return inputs, labels
 
 
 def generate_weights(inputs, hidden_nodes):
-    W = [np.random.normal(0, 0.001, (hidden_nodes, inputs.shape[0] + 1)),
-         np.random.normal(0, 0.001, (1, hidden_nodes))]
+    W = [np.random.normal(0, 0.01, (hidden_nodes, inputs.shape[0] + 1)),
+         np.random.normal(0, 0.01, (1, hidden_nodes + 1))]
 
     # Set bias weight to zero
     #if inputs[2,0] == 0:
@@ -109,7 +143,7 @@ def transfer(H):
 
 def forward_pass(W, inputs):
     H = np.dot(W[0], np.concatenate((inputs, np.ones((1, inputs.shape[1])))))
-    H = transfer(H)
+    H = np.concatenate((transfer(H), np.ones((1, inputs.shape[1]))))
     O = np.dot(W[1], H)
     O = transfer(O)
     return O, H
@@ -117,6 +151,7 @@ def forward_pass(W, inputs):
 def backward_pass(W, labels, O, H):
     dO = (O - labels) * ((1 + O) * (1 - O)) * 0.5
     dH = np.dot(W[1].T, dO) * ((1 + H) * (1 - H)) * 0.5
+    dH = np.delete(dH, dH.shape[0]-1, 0)
     return dO, dH
 
 def update_weights(inputs, H, dO, dH, eta, W_momentum, use_momentum=False):
@@ -138,8 +173,8 @@ def compute_cost(O, labels):
     return np.sum((labels - O)**2)/2
 
 def predict(W, inputs):
-    H, O = forward_pass(W, inputs)
-    return H
+    O, H = forward_pass(W, inputs)
+    return O
 
 def perceptron(inputs, labels, W, epochs, eta, use_batch=True, use_momentum=False):
     cost = []
@@ -150,7 +185,7 @@ def perceptron(inputs, labels, W, epochs, eta, use_batch=True, use_momentum=Fals
         dW, W_momentum = update_weights(inputs, H, dO, dH, eta, W_momentum, use_momentum)
         W[0] += dW[0]
         W[1] += dW[1]
-        print(compute_cost(O, labels))
+        print("cost", compute_cost(O, labels))
         #plot_classes(inputs, labels)
         #draw_line(W)
     plot_decision_boundary(inputs, lambda x: predict(W, x))
@@ -166,8 +201,8 @@ NOTES:
  - not using batch and no delta rule makes model wiggle
 '''
 
-inputs, labels = generate_binary_data(bias=True, symmetric_labels=False)
-W = generate_weights(inputs, 50)
+inputs, labels = generate_binary_data(bias=True, symmetric_labels=True, linear=False)
+W = generate_weights(inputs, 6)
 
 perceptron(inputs, labels, W, 100, 0.01, use_batch=True, use_momentum=False)
 
