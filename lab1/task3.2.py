@@ -21,23 +21,6 @@ def generate_binary_data(bias = True, symmetric_labels=False, linear=True):
         x = np.zeros([3, n_points*2])
         x[0,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[0]
         x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
-        x[2,:n_points] = -1 if symmetric_labels==True else 0
-        x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
-        x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
-        x[2,n_points:] = 1
-
-        # shuffle columns in x
-        inputs = np.zeros([2, n_points*2])
-        labels = np.zeros([1, n_points*2])
-        idx = np.random.permutation(n_points*2)
-        for i in idx:
-            inputs[:2,i] = x[:2,idx[i]]
-            #inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
-            labels[0,i] = x[2,idx[i]]
-
-        labels = labels.astype(int)
-
-        return inputs, labels
     else:
         '''
         Generates two non-linearly separable classes of points
@@ -52,23 +35,23 @@ def generate_binary_data(bias = True, symmetric_labels=False, linear=True):
         x[0,:math.floor(n_points/2)] = np.random.randn(1, math.floor(n_points/2)) * sigmaA - mA[0]
         x[0,math.floor(n_points/2):n_points] = np.random.randn(1, math.floor(n_points/2)) * sigmaA + mA[0]
         x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
-        x[2,:n_points] = -1 if symmetric_labels==True else 0
-        x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
-        x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
-        x[2,n_points:] = 1
+    x[2,:n_points] = -1 if symmetric_labels==True else 0
+    x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
+    x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
+    x[2,n_points:] = 1
 
-        # shuffle columns in x
-        inputs = np.zeros([2, n_points*2])
-        labels = np.zeros([1, n_points*2])
-        idx = np.random.permutation(n_points*2)
-        for i in idx:
-            inputs[:2,i] = x[:2,idx[i]]
-            #inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
-            labels[0,i] = x[2,idx[i]]
+    # shuffle columns in x
+    inputs = np.zeros([2, n_points*2])
+    labels = np.zeros([1, n_points*2])
+    idx = np.random.permutation(n_points*2)
+    for i in idx:
+        inputs[:2,i] = x[:2,idx[i]]
+        #inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
+        labels[0,i] = x[2,idx[i]]
 
-        labels = labels.astype(int)
+    labels = labels.astype(int)
 
-        return inputs, labels
+    return inputs, labels
 
 
 def generate_weights(inputs, hidden_nodes):
@@ -124,7 +107,6 @@ def plot_decision_boundary(X, predict):
     y_min, y_max = X[1, :].min() - .5, X[1, :].max() + .5
     h = 0.01
 
-
     # Generate a grid of points with distance h between them
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
 
@@ -135,7 +117,7 @@ def plot_decision_boundary(X, predict):
     # Plot the contour and training examples
     plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
     #plt.scatter(X[:, 0], X[:, 1], c=[0,1], cmap=plt.cm.Spectral)
-
+    #plt.waitforbuttonpress()
 
 
 def transfer(H):
@@ -155,25 +137,24 @@ def backward_pass(W, labels, O, H):
     return dO, dH
 
 def update_weights(inputs, H, dO, dH, eta, W_momentum, use_momentum=False):
-
     alpha = 0.9
-
     if use_momentum:
-        W_momentum = [(W_momentum[0] * alpha) - np.dot(dH, inputs.T) * (1 - alpha),
+        W_momentum = [(W_momentum[0] * alpha) - np.dot(dH, np.concatenate((inputs, np.ones((1, inputs.shape[1])))).T) * (1 - alpha),
                       (W_momentum[1] * alpha) - np.dot(dO, H.T) * (1 - alpha)]
         dW = [W_momentum[0] * eta,
               W_momentum[1] * eta]
     else:
         dW = [-eta * np.dot(dH, np.concatenate((inputs, np.ones((1, inputs.shape[1])))).T),
               -eta * np.dot(dO, H.T)]
-
     return dW, W_momentum
 
 def compute_cost(O, labels):
+    #O = np.where(O > 0, 1, 0)
     return np.sum((labels - O)**2)/2
 
 def predict(W, inputs):
     O, _ = forward_pass(W, inputs)
+    O = np.where(O > 0, 1, 0)
     return O
 
 def perceptron(inputs, labels, W, epochs, eta, use_batch=True, use_momentum=False):
@@ -202,8 +183,8 @@ NOTES:
 '''
 
 inputs, labels = generate_binary_data(bias=True, symmetric_labels=True, linear=False)
-W = generate_weights(inputs, 50)
+W = generate_weights(inputs, 2)
 
-perceptron(inputs, labels, W, 100, 0.01, use_batch=True, use_momentum=False)
+perceptron(inputs, labels, W, 10000, 0.01, use_batch=True, use_momentum=True)
 
 plt.show(block=True)
