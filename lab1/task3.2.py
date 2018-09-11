@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 import math
 
 
-def generate_binary_data(bias = True, symmetric_labels=False, linear=True):
+def generate_binary_data(linear=True):
 
+
+    n_points = 300
 
     if linear:
         '''
@@ -12,7 +14,7 @@ def generate_binary_data(bias = True, symmetric_labels=False, linear=True):
         Note: axis are set between -3 and 3 on both axis
         Note: Labels (-1, 1)
         '''
-        n_points = 100
+
         mA = np.array([ 1.5, 0.5])
         mB = np.array([-1.5, -0.5])
         sigmaA = 0.4
@@ -25,17 +27,16 @@ def generate_binary_data(bias = True, symmetric_labels=False, linear=True):
         '''
         Generates two non-linearly separable classes of points
         '''
-        n_points = 100
         mA = [ 1.0, 0.3]
         mB = [ 0.0, 0.0]
-        sigmaA = 0.1
-        sigmaB = 0.1
+        sigmaA = 0.3
+        sigmaB = 0.3
 
         x = np.zeros([3, n_points*2])
         x[0,:math.floor(n_points/2)] = np.random.randn(1, math.floor(n_points/2)) * sigmaA - mA[0]
         x[0,math.floor(n_points/2):n_points] = np.random.randn(1, math.floor(n_points/2)) * sigmaA + mA[0]
         x[1,:n_points] = np.random.randn(1, n_points) * sigmaA + mA[1]
-    x[2,:n_points] = -1 if symmetric_labels==True else 0
+    x[2,:n_points] = -1
     x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
     x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
     x[2,n_points:] = 1
@@ -46,17 +47,62 @@ def generate_binary_data(bias = True, symmetric_labels=False, linear=True):
     idx = np.random.permutation(n_points*2)
     for i in idx:
         inputs[:2,i] = x[:2,idx[i]]
-        #inputs[2,i] = 1 if bias == True else 0 # used later on as bias term multipyer
         labels[0,i] = x[2,idx[i]]
-
     labels = labels.astype(int)
 
     return inputs, labels
 
+def modify_data(inputs, labels, class_modifier):
+    '''
+    class_modifier = 1: remove random 25% from each class
+    class_modifier = 2: remove 50% from classA (labels = -1)
+    class_modifier = 3: remove 50% from classB (labels = 1 )
+    class_modifier = 4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and
+                        80% from classA(1,:)>0 (i.e x1 > 0)
+    '''
+    n_samples = inputs.shape[1]
 
-def generate_weights(inputs, hidden_nodes):
-    W = [np.random.normal(0, 0.01, (hidden_nodes, inputs.shape[0] + 1)),
-         np.random.normal(0, 0.01, (1, hidden_nodes + 1))]
+    if class_modifier == 1:
+        classA = np.where(labels < 0, -1, 1)
+        idx = np.random.randint(n_samples/2, size=int((n_samples/2)*0.25))
+        #TODO:
+
+
+
+
+
+
+
+
+def split_data(inputs, labels, test_size, validation_size):
+    assert validation_size + test_size < 1
+    validation_size = int(inputs.shape[1]*validation_size)
+    test_size = int(inputs.shape[1]*test_size)
+
+    validation = {'inputs': inputs[:,0:validation_size],
+                  'labels': labels[:,0:validation_size]}
+    test = {'inputs': inputs[:,validation_size+1:validation_size+test_size],
+            'labels': labels[:,validation_size+1:validation_size+test_size]}
+    training = {'inputs': inputs[:,validation_size+test_size+1:],
+                'labels': labels[:,validation_size+test_size+1:]}
+
+    print()
+    print("Sample size:", inputs.shape[1])
+    print("training set: in=", training['inputs'].shape[1], " lbl=", training['labels'].shape[1])
+    print("validation set: in=", validation['inputs'].shape[1], " lbl=", validation['labels'].shape[1])
+    print("test set: in=", test['inputs'].shape[1], " lbl=", test['labels'].shape[1])
+    print()
+
+    return training, validation, test
+
+def generate_weights(inputs, hidden_nodes, he=True):
+
+    if not he:
+        W = [np.random.normal(0, 0.1, (hidden_nodes, inputs.shape[0] + 1)),
+            np.random.normal(0, 0.1, (1, hidden_nodes + 1))]
+    else:
+        W = [np.random.normal(0, np.sqrt(2 / (inputs.shape[0]+1)), (hidden_nodes, inputs.shape[0] + 1)),
+            np.random.normal(0, np.sqrt(2 / (hidden_nodes + 1)), (1, hidden_nodes + 1))]
 
     # Set bias weight to zero
     #if inputs[2,0] == 0:
@@ -85,19 +131,19 @@ def draw_line(W):
     plt.pause(0.01)
     plt.show()
 
-def plot_cost(cost, epochs, delta_rule, use_batch):
+def plot_cost(training_cost, validation_cost, epochs, use_batch):
     # hold figure until window close
     plt.waitforbuttonpress()
 
-    ylabel = "error (MSE)" if delta_rule else "error (T/F-ratio)"
-    title = "Delta learning rule " if delta_rule else "Perceptron learning rule "
-    title += "w/ batch" if use_batch else "w/o batch"
+    #ylabel = "error (MSE)" if delta_rule else "error (T/F-ratio)"
+    #title += "Gradient ascend w/ batch" if use_batch else "w/o batch"
 
     x = np.arange(0, epochs)
-    plt.plot(x, cost, 'r')
-    plt.title(title, fontsize=14)
+    plt.plot(x, training_cost, 'r')
+    plt.plot(x, validation_cost, 'g')
+    #plt.title(title, fontsize=14)
     plt.xlabel('epochs', fontsize=12)
-    plt.ylabel(ylabel, fontsize=12)
+    #plt.ylabel(ylabel, fontsize=12)
     plt.show()
 
 
@@ -150,6 +196,8 @@ def update_weights(inputs, H, dO, dH, eta, W_momentum, use_momentum=False):
 
 def compute_cost(O, labels):
     #O = np.where(O > 0, 1, 0)
+    #print("o", O)
+    #print("labels", labels)
     return np.sum((labels - O)**2)/2
 
 def predict(W, inputs):
@@ -157,8 +205,13 @@ def predict(W, inputs):
     O = np.where(O > 0, 1, 0)
     return O
 
-def perceptron(inputs, labels, W, epochs, eta, use_batch=True, use_momentum=False):
-    cost = []
+def perceptron(training, validation, test, W, epochs, eta, use_batch=True, use_momentum=False):
+    training_cost = []
+    validation_cost = []
+
+    inputs = training['inputs']
+    labels = training['labels']
+
     W_momentum = [np.zeros(W[0].shape), np.zeros(W[1].shape)]
     for i in range(epochs):
         O, H = forward_pass(W, inputs)
@@ -167,10 +220,20 @@ def perceptron(inputs, labels, W, epochs, eta, use_batch=True, use_momentum=Fals
         W[0] += dW[0]
         W[1] += dW[1]
         print("cost", compute_cost(O, labels))
+        training_cost.append(compute_cost(O, labels))
+        _O, _ = forward_pass(W, validation['inputs'])
+        print("validation", compute_cost(_O, validation['labels']))
+        validation_cost.append(compute_cost(_O, validation['labels']))
+
         #plot_classes(inputs, labels)
         #draw_line(W)
     plot_decision_boundary(inputs, lambda x: predict(W, x))
     plot_classes(inputs, labels)
+    plot_cost(training_cost, validation_cost, epochs, use_batch)
+
+    # test
+    o, _ = forward_pass(W, test['inputs'])
+    print("Test cost:", compute_cost(o, test['labels']))
 plt.ion()
 plt.show()
 
@@ -181,10 +244,11 @@ NOTES:
  - not using batch explodes with large learning rate
  - not using batch and no delta rule makes model wiggle
 '''
+inputs, labels = generate_binary_data(linear=False)
+inputs, labels = modify_data(inputs, labels, 1)
+training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
+W = generate_weights(training['inputs'], 50, he=True)
 
-inputs, labels = generate_binary_data(bias=True, symmetric_labels=True, linear=False)
-W = generate_weights(inputs, 2)
-
-perceptron(inputs, labels, W, 10000, 0.01, use_batch=True, use_momentum=True)
+perceptron(training, validation, test, W, 1000, 0.01, use_batch=True, use_momentum=True)
 
 plt.show(block=True)
