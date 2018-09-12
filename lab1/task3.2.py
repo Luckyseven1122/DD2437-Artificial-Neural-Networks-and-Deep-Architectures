@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import math
 
 
-def generate_binary_data(linear=True, class_modifier=0):
+def generate_binary_data(n_points=50, linear=True, class_modifier=0):
     '''
     class_modifier = 0: no subsampling
     class_modifier = 1: remove random 25% from each class
@@ -12,9 +12,7 @@ def generate_binary_data(linear=True, class_modifier=0):
     class_modifier = 4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and
                         80% from classA(1,:)>0 (i.e x1 > 0)
     '''
-
-    n_points = 20
-
+    assert isinstance(n_points, int)
     if linear:
         '''
         Generates two linearly separable classes of points
@@ -49,18 +47,40 @@ def generate_binary_data(linear=True, class_modifier=0):
     x[2,n_points:] = 1
 
     if class_modifier == 1:
-        print(math.floor(x.shape[1]/8))
         idx = np.arange(math.floor(x.shape[1]/2))
         idxA = idx[:math.floor(x.shape[1]/4)]
-        idxB = idx[math.floor(x.shape[1]/4)+1:]
+        idxB = idx[math.floor(x.shape[1]/4):] # +1 ???
         np.random.shuffle(idxA)
         np.random.shuffle(idxB)
         idxA = idxA[:math.floor(x.shape[1]/8)]
         idxB = idxB[:math.floor(x.shape[1]/8)]
         idx = np.concatenate((idxA, idxB))
         x = np.delete(x, idx, axis=1)
-
-
+    if class_modifier == 2:
+        idx = np.arange(math.floor(x.shape[1]/2))
+        np.random.shuffle(idx)
+        idx = idx[:math.floor(x.shape[1]/4)]
+        x = np.delete(x, idx, axis=1)
+    if class_modifier == 3:
+        idx = np.arange(math.floor(x.shape[1]/2),x.shape[1])
+        np.random.shuffle(idx)
+        idx = idx[:math.floor(x.shape[1]/4)]
+        x = np.delete(x, idx, axis=1)
+    if class_modifier == 4:
+        idx = np.arange(math.floor(x.shape[1]/2))
+        classA = x[:,idx]
+        xless = np.where(classA[0,:] < 0, idx, -1)
+        xmore = np.where(classA[0,:] >= 0, idx, -1)
+        xless = xless[xless >= 0]
+        xmore = xmore[xmore >= 0]
+        np.random.shuffle(xless)
+        np.random.shuffle(xmore)
+        xless_size = xless.shape[0]
+        xmore_size = xmore.shape[0]
+        xless = xless[:math.floor(x.shape[1]*0.8)]
+        xmore = xmore[:math.floor(x.shape[1]*0.2)]
+        idx = np.concatenate((xless, xmore))
+        x = np.delete(x, idx, axis=1)
     # shuffle columns in x
     inputs = np.zeros([2, x.shape[1]])
     labels = np.zeros([1, x.shape[1]])
@@ -70,6 +90,15 @@ def generate_binary_data(linear=True, class_modifier=0):
         labels[0,i] = x[2,idx[i]]
     labels = labels.astype(int)
 
+    return inputs, labels
+
+def generate_encoder_data(n_points=50):
+    assert isinstance(n_points, int)
+    inputs = -np.ones((8, n_points))
+    idx = np.random.randint(7, size=n_points)
+    for i in range(inputs.shape[1]):
+        inputs[idx[i],i] = 1
+    labels = inputs.copy()
     return inputs, labels
 
 
@@ -99,19 +128,6 @@ def split_data(inputs, labels, test_size, validation_size):
 
     return training, validation, test
 
-def generate_weights(inputs, hidden_nodes, he=True):
-
-    if not he:
-        W = [np.random.normal(0, 0.1, (hidden_nodes, inputs.shape[0] + 1)),
-            np.random.normal(0, 0.1, (1, hidden_nodes + 1))]
-    else:
-        W = [np.random.normal(0, np.sqrt(2 / (inputs.shape[0]+1)), (hidden_nodes, inputs.shape[0] + 1)),
-            np.random.normal(0, np.sqrt(2 / (hidden_nodes + 1)), (1, hidden_nodes + 1))]
-
-    # Set bias weight to zero
-    #if inputs[2,0] == 0:
-    #   W[0,2] = 0
-    return W
 
 def plot_classes(inputs, labels):
     # force axis for "real-time" update in learning step
@@ -120,7 +136,7 @@ def plot_classes(inputs, labels):
     plt.grid(True)
     plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
     plt.show()
-
+    plt.waitforbuttonpress()
 
 def line(W, x):
     #k = -(W.T[2]/W.T[1])/(W.T[2]/W.T[0])
@@ -137,7 +153,6 @@ def draw_line(W):
 
 def plot_cost(training_cost, validation_cost, epochs, use_batch):
     # hold figure until window close
-    plt.waitforbuttonpress()
 
     #ylabel = "error (MSE)" if delta_rule else "error (T/F-ratio)"
     #title += "Gradient ascend w/ batch" if use_batch else "w/o batch"
@@ -210,18 +225,40 @@ def predict(W, inputs):
     O = np.where(O > 0, 1, 0)
     return O
 
-def perceptron(training, validation, test, W, epochs, eta, use_batch=True, use_momentum=False):
+def generate_weights(inputs, settings):
+    if not settings['he_init']:
+        W = [np.random.normal(0, 0.1, (settings['hidden_nodes'], inputs.shape[0] + 1)),
+            np.random.normal(0, 0.1, (settings['output_dim'], settings['hidden_nodes'] + 1))]
+    else:
+        W = [np.random.normal(0, np.sqrt(2 / (inputs.shape[0]+1)), (settings['hidden_nodes'], inputs.shape[0] + 1)),
+            np.random.normal(0, np.sqrt(2 / (settings['hidden_nodes'] + 1)), (settings['output_dim'], settings['hidden_nodes'] + 1))]
+    return W
+
+
+def perceptron(training, validation, test, settings):
+    assert isinstance(settings['epochs'], int)
+    assert isinstance(settings['eta'], float)
+    assert isinstance(settings['hidden_nodes'], int)
+    assert isinstance(settings['output_dim'], int)
+    assert isinstance(settings['use_batch'], bool)
+    assert isinstance(settings['use_momentum'], bool)
+    assert isinstance(settings['he_init'], bool)
+    assert settings['output_dim'] > 0
+    assert settings['epochs'] > 0
+    assert settings['eta'] > 0
+    assert settings['hidden_nodes'] > 0
+
     training_cost = []
     validation_cost = []
-
     inputs = training['inputs']
     labels = training['labels']
 
+    W = generate_weights(inputs, settings)
     W_momentum = [np.zeros(W[0].shape), np.zeros(W[1].shape)]
-    for i in range(epochs):
+    for i in range(settings['epochs']):
         O, H = forward_pass(W, inputs)
         dO, dH = backward_pass(W, labels, O, H)
-        dW, W_momentum = update_weights(inputs, H, dO, dH, eta, W_momentum, use_momentum)
+        dW, W_momentum = update_weights(inputs, H, dO, dH, settings['eta'], W_momentum, settings['use_momentum'])
         W[0] += dW[0]
         W[1] += dW[1]
         print("cost", compute_cost(O, labels))
@@ -233,9 +270,10 @@ def perceptron(training, validation, test, W, epochs, eta, use_batch=True, use_m
 
         #plot_classes(inputs, labels)
         #draw_line(W)
-    plot_decision_boundary(inputs, lambda x: predict(W, x))
-    plot_classes(inputs, labels)
-    plot_cost(training_cost, validation_cost, epochs, use_batch)
+
+    #plot_decision_boundary(inputs, lambda x: predict(W, x))
+    #plot_classes(inputs, labels)
+    plot_cost(training_cost, validation_cost, settings['epochs'], settings['use_batch'])
 
     # test
     if isinstance(test['inputs'], np.ndarray):
@@ -251,10 +289,22 @@ NOTES:
  - not using batch explodes with large learning rate
  - not using batch and no delta rule makes model wiggle
 '''
-inputs, labels = generate_binary_data(linear=False, class_modifier=1)
-training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
-W = generate_weights(training['inputs'], 50, he=True)
 
-perceptron(training, validation, test, W, 1000, 0.01, use_batch=True, use_momentum=True)
-print(training['inputs'].shape)
+#inputs, labels = generate_binary_data(50, linear=False, class_modifier=4)
+inputs, labels = generate_encoder_data(2000)
+training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
+
+
+
+network_settings = {
+    'epochs'       : 400,
+    'eta'          : 0.001,
+    'hidden_nodes' : 3,
+    'output_dim'   : 8,
+    'use_batch'    : True,
+    'use_momentum' : True,
+    'he_init'      : True,
+}
+
+perceptron(training, validation, test, network_settings)
 plt.show(block=True)
