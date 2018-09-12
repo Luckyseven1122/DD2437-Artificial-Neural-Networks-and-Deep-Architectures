@@ -13,7 +13,7 @@ def generate_binary_data(linear=True, class_modifier=0):
                         80% from classA(1,:)>0 (i.e x1 > 0)
     '''
 
-    n_points = 20
+    n_points = 50
 
     if linear:
         '''
@@ -49,18 +49,40 @@ def generate_binary_data(linear=True, class_modifier=0):
     x[2,n_points:] = 1
 
     if class_modifier == 1:
-        print(math.floor(x.shape[1]/8))
         idx = np.arange(math.floor(x.shape[1]/2))
         idxA = idx[:math.floor(x.shape[1]/4)]
-        idxB = idx[math.floor(x.shape[1]/4)+1:]
+        idxB = idx[math.floor(x.shape[1]/4):] # +1 ???
         np.random.shuffle(idxA)
         np.random.shuffle(idxB)
         idxA = idxA[:math.floor(x.shape[1]/8)]
         idxB = idxB[:math.floor(x.shape[1]/8)]
         idx = np.concatenate((idxA, idxB))
         x = np.delete(x, idx, axis=1)
-
-
+    if class_modifier == 2:
+        idx = np.arange(math.floor(x.shape[1]/2))
+        np.random.shuffle(idx)
+        idx = idx[:math.floor(x.shape[1]/4)]
+        x = np.delete(x, idx, axis=1)
+    if class_modifier == 3:
+        idx = np.arange(math.floor(x.shape[1]/2),x.shape[1])
+        np.random.shuffle(idx)
+        idx = idx[:math.floor(x.shape[1]/4)]
+        x = np.delete(x, idx, axis=1)
+    if class_modifier == 4:
+        idx = np.arange(math.floor(x.shape[1]/2))
+        classA = x[:,idx]
+        xless = np.where(classA[0,:] < 0, idx, -1)
+        xmore = np.where(classA[0,:] >= 0, idx, -1)
+        xless = xless[xless >= 0]
+        xmore = xmore[xmore >= 0]
+        np.random.shuffle(xless)
+        np.random.shuffle(xmore)
+        xless_size = xless.shape[0]
+        xmore_size = xmore.shape[0]
+        xless = xless[:math.floor(x.shape[1]*0.8)]
+        xmore = xmore[:math.floor(x.shape[1]*0.2)]
+        idx = np.concatenate((xless, xmore))
+        x = np.delete(x, idx, axis=1)
     # shuffle columns in x
     inputs = np.zeros([2, x.shape[1]])
     labels = np.zeros([1, x.shape[1]])
@@ -213,7 +235,6 @@ def predict(W, inputs):
 def perceptron(training, validation, test, W, epochs, eta, use_batch=True, use_momentum=False):
     training_cost = []
     validation_cost = []
-
     inputs = training['inputs']
     labels = training['labels']
 
@@ -251,7 +272,7 @@ NOTES:
  - not using batch explodes with large learning rate
  - not using batch and no delta rule makes model wiggle
 '''
-inputs, labels = generate_binary_data(linear=False, class_modifier=1)
+inputs, labels = generate_binary_data(linear=False, class_modifier=4)
 training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
 W = generate_weights(training['inputs'], 50, he=True)
 
