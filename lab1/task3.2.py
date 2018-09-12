@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import math
 
 
-def generate_binary_data(linear=True, class_modifier=0):
+def generate_binary_data(n_points=50, linear=True, class_modifier=0):
     '''
     class_modifier = 0: no subsampling
     class_modifier = 1: remove random 25% from each class
@@ -12,9 +12,7 @@ def generate_binary_data(linear=True, class_modifier=0):
     class_modifier = 4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and
                         80% from classA(1,:)>0 (i.e x1 > 0)
     '''
-
-    n_points = 50
-
+    assert isinstance(n_points, int)
     if linear:
         '''
         Generates two linearly separable classes of points
@@ -94,6 +92,15 @@ def generate_binary_data(linear=True, class_modifier=0):
 
     return inputs, labels
 
+def generate_encoder_data(n_points=50):
+    assert isinstance(n_points, int)
+    inputs = -np.ones((8, n_points))
+    idx = np.random.randint(7, size=n_points)
+    for i in range(inputs.shape[1]):
+        inputs[idx[i],i] = 1
+    labels = inputs.copy()
+    return inputs, labels
+
 
 
 def split_data(inputs, labels, test_size, validation_size):
@@ -129,7 +136,7 @@ def plot_classes(inputs, labels):
     plt.grid(True)
     plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
     plt.show()
-
+    plt.waitforbuttonpress()
 
 def line(W, x):
     #k = -(W.T[2]/W.T[1])/(W.T[2]/W.T[0])
@@ -146,7 +153,6 @@ def draw_line(W):
 
 def plot_cost(training_cost, validation_cost, epochs, use_batch):
     # hold figure until window close
-    plt.waitforbuttonpress()
 
     #ylabel = "error (MSE)" if delta_rule else "error (T/F-ratio)"
     #title += "Gradient ascend w/ batch" if use_batch else "w/o batch"
@@ -264,8 +270,9 @@ def perceptron(training, validation, test, settings):
 
         #plot_classes(inputs, labels)
         #draw_line(W)
-    plot_decision_boundary(inputs, lambda x: predict(W, x))
-    plot_classes(inputs, labels)
+
+    #plot_decision_boundary(inputs, lambda x: predict(W, x))
+    #plot_classes(inputs, labels)
     plot_cost(training_cost, validation_cost, settings['epochs'], settings['use_batch'])
 
     # test
@@ -282,14 +289,18 @@ NOTES:
  - not using batch explodes with large learning rate
  - not using batch and no delta rule makes model wiggle
 '''
-inputs, labels = generate_binary_data(linear=False, class_modifier=4)
+
+#inputs, labels = generate_binary_data(50, linear=False, class_modifier=4)
+inputs, labels = generate_encoder_data(2000)
 training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
 
+
+
 network_settings = {
-    'epochs'       : 1000,
-    'eta'          : 0.01,
-    'hidden_nodes' : 50,
-    'output_dim'   : 1,
+    'epochs'       : 400,
+    'eta'          : 0.001,
+    'hidden_nodes' : 3,
+    'output_dim'   : 8,
     'use_batch'    : True,
     'use_momentum' : True,
     'he_init'      : True,
