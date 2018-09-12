@@ -121,19 +121,6 @@ def split_data(inputs, labels, test_size, validation_size):
 
     return training, validation, test
 
-def generate_weights(inputs, hidden_nodes, he=True):
-
-    if not he:
-        W = [np.random.normal(0, 0.1, (hidden_nodes, inputs.shape[0] + 1)),
-            np.random.normal(0, 0.1, (1, hidden_nodes + 1))]
-    else:
-        W = [np.random.normal(0, np.sqrt(2 / (inputs.shape[0]+1)), (hidden_nodes, inputs.shape[0] + 1)),
-            np.random.normal(0, np.sqrt(2 / (hidden_nodes + 1)), (1, hidden_nodes + 1))]
-
-    # Set bias weight to zero
-    #if inputs[2,0] == 0:
-    #   W[0,2] = 0
-    return W
 
 def plot_classes(inputs, labels):
     # force axis for "real-time" update in learning step
@@ -232,17 +219,40 @@ def predict(W, inputs):
     O = np.where(O > 0, 1, 0)
     return O
 
-def perceptron(training, validation, test, W, epochs, eta, use_batch=True, use_momentum=False):
+def generate_weights(inputs, settings):
+    if not settings['he_init']:
+        W = [np.random.normal(0, 0.1, (settings['hidden_nodes'], inputs.shape[0] + 1)),
+            np.random.normal(0, 0.1, (settings['output_dim'], settings['hidden_nodes'] + 1))]
+    else:
+        W = [np.random.normal(0, np.sqrt(2 / (inputs.shape[0]+1)), (settings['hidden_nodes'], inputs.shape[0] + 1)),
+            np.random.normal(0, np.sqrt(2 / (settings['hidden_nodes'] + 1)), (settings['output_dim'], settings['hidden_nodes'] + 1))]
+    return W
+
+
+def perceptron(training, validation, test, settings):
+    assert isinstance(settings['epochs'], int)
+    assert isinstance(settings['eta'], float)
+    assert isinstance(settings['hidden_nodes'], int)
+    assert isinstance(settings['output_dim'], int)
+    assert isinstance(settings['use_batch'], bool)
+    assert isinstance(settings['use_momentum'], bool)
+    assert isinstance(settings['he_init'], bool)
+    assert settings['output_dim'] > 0
+    assert settings['epochs'] > 0
+    assert settings['eta'] > 0
+    assert settings['hidden_nodes'] > 0
+
     training_cost = []
     validation_cost = []
     inputs = training['inputs']
     labels = training['labels']
 
+    W = generate_weights(inputs, settings)
     W_momentum = [np.zeros(W[0].shape), np.zeros(W[1].shape)]
-    for i in range(epochs):
+    for i in range(settings['epochs']):
         O, H = forward_pass(W, inputs)
         dO, dH = backward_pass(W, labels, O, H)
-        dW, W_momentum = update_weights(inputs, H, dO, dH, eta, W_momentum, use_momentum)
+        dW, W_momentum = update_weights(inputs, H, dO, dH, settings['eta'], W_momentum, settings['use_momentum'])
         W[0] += dW[0]
         W[1] += dW[1]
         print("cost", compute_cost(O, labels))
@@ -256,7 +266,7 @@ def perceptron(training, validation, test, W, epochs, eta, use_batch=True, use_m
         #draw_line(W)
     plot_decision_boundary(inputs, lambda x: predict(W, x))
     plot_classes(inputs, labels)
-    plot_cost(training_cost, validation_cost, epochs, use_batch)
+    plot_cost(training_cost, validation_cost, settings['epochs'], settings['use_batch'])
 
     # test
     if isinstance(test['inputs'], np.ndarray):
@@ -274,8 +284,16 @@ NOTES:
 '''
 inputs, labels = generate_binary_data(linear=False, class_modifier=4)
 training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
-W = generate_weights(training['inputs'], 50, he=True)
 
-perceptron(training, validation, test, W, 1000, 0.01, use_batch=True, use_momentum=True)
-print(training['inputs'].shape)
+network_settings = {
+    'epochs'       : 1000,
+    'eta'          : 0.01,
+    'hidden_nodes' : 50,
+    'output_dim'   : 1,
+    'use_batch'    : True,
+    'use_momentum' : True,
+    'he_init'      : True,
+}
+
+perceptron(training, validation, test, network_settings)
 plt.show(block=True)
