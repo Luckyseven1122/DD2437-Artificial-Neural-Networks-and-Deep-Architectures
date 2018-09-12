@@ -3,12 +3,13 @@
 '''
 
 import ast
+import numpy as np
 
-def write_data(filename, data):
+def write_list(filename, data):
 	with open(filename, 'w') as file:  
 		file.writelines("%s\n" % d for d in data)
 
-def read_data(filename):
+def read_list(filename):
 	# define empty list
 	data = []
 
@@ -29,22 +30,29 @@ def read_data(filename):
 		# return the contents of the file as a list
 		return data
 
+def write_array(filename, data):
+	np.save(filename, data)
+
+def read_array(filename):
+	return np.load(filename+".npy")
+
+
 '''
 	DEBUG CODE
 '''
 '''
-# Define filename
-filename = "testfil.txt"
+# Define filename sans .npy-extension
+filename = "npout"
 
-# Define dummy list
-my_list=[[1.0,2.1,-3.2], [4.1,5.12,6.2], [7.23,8.0,-9.0]]
+# Define dummy array
+x=np.array([(1.0,2.1,-3.2), (4.1,5.12,6.2), (7.23,8.0,-9.0)])
 
-# Write list to file
-write_data(filename, my_list)
+# Write array to file
+write_array(filename, x)
 
-# Read back list
-my_list = read_data(filename)
+# Read back array
+y = read_array(filename)
 
 # Present result
-print(my_list)
+print(y)
 '''
