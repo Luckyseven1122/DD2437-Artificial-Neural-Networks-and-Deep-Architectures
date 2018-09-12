@@ -66,6 +66,15 @@ def draw_line(W):
     plt.pause(0.01)
     plt.show()
 
+def draw_two_lines(W1, W2):
+    x = [-4, 4]
+    y1 = [line(W1, x[0]), line(W1, x[1])]
+    y2 = [line(W2, x[0]), line(W2, x[1])]
+    plt.plot(x, y1, 'y')
+    plt.plot(x, y2, 'x')
+    plt.pause(0.01)
+    plt.show()
+
 def plot_cost(cost, epochs, delta_rule, use_batch):
     # hold figure until window close
     plt.waitforbuttonpress()
@@ -80,6 +89,25 @@ def plot_cost(cost, epochs, delta_rule, use_batch):
     plt.xlabel('epochs', fontsize=12)
     plt.ylabel(ylabel, fontsize=12)
     plt.show()
+
+def plot_cost_comparison(cost_batch,cost_seq, epochs, delta_rule):
+    # hold figure until window close
+    # plt.waitforbuttonpress()
+
+    ylabel = "error (MSE)" if delta_rule else "error (T/F-ratio)"
+    title = "Delta learning rule " if delta_rule else "Perceptron learning rule "
+    title += "w/ batch and sequential"
+
+    x = np.arange(0, epochs)
+    plt.plot(x, cost_batch, 'r', label='cost batch')
+    plt.plot(x, cost_seq, 'b', label='cost seq')
+
+    plt.title(title, fontsize=14)
+    plt.xlabel('epochs', fontsize=12)
+    plt.ylabel(ylabel, fontsize=12)
+    plt.legend()
+    plt.show()
+
 
 
 def activation(W, inputs):
@@ -105,35 +133,67 @@ def compute_cost(errors, delta_rule):
     else:
         return np.where((errors) == 0, 0, 1).mean() # ratio
 
-def perceptron(inputs, labels, W, epochs, eta, delta_rule=False, use_batch=True):
+def seq_perceptron(W, inputs, labels, eta,delta_rule):
+    error = 0
+    for sample in inputs.T:
+        outputs = activation(W, inputs)
+        T = threshold(outputs)
+        dW, e = update_weights(inputs, labels, W, T, eta, delta_rule)
+        W += dW
+        error += e
+    c = compute_cost(e, delta_rule)
+    print("Seq cost: ", c)
+    return c, W 
+
+def batch_perceptron(W, inputs, labels, eta, delta_rule):
+    outputs = activation(W, inputs)
+    T = threshold(outputs)
+    dW, e = update_weights(inputs, labels, W, T, eta, delta_rule)
+    c = compute_cost(e, delta_rule)
+    print("Batch cost: ", c)
+    return c, dW
+
+def perceptron(inputs, labels, W, epochs, eta, delta_rule=False, use_batch=True, use_seq_batch=False):
 
     plot_classes(inputs, labels)
     cost = []
+    W_batch = W.copy()
+    W_seq = W.copy()
+    cost_batch = [] 
+    cost_seq = []
+
     for i in range(epochs):
+        if use_seq_batch:
+            c_batch, dW_batch = batch_perceptron(W_batch,inputs,labels,eta,delta_rule)
+            c_seq, W_new = seq_perceptron(W_seq,inputs,labels,eta,delta_rule) 
+
+            W_batch += dW_batch
+            W_seq = W_new
+
+            cost_batch.append(c_batch)
+            cost_seq.append(c_seq)
+
+            print('seq c: ', c_seq, ' batch c: ', c_batch)
         if use_batch:
-            outputs = activation(W, inputs)
-            T = threshold(outputs)
-            dW, e = update_weights(inputs, labels, W, T, eta, delta_rule)
+            c, dW = batch_perceptron(W,inputs,labels,eta,delta_rule)
             W += dW
-            c = compute_cost(e, delta_rule)
             cost.append(c)
-            print(c)
         else:
-            error = 0
-            for sample in inputs.T:
-                outputs = activation(W, inputs)
-                T = threshold(outputs)
-                dW, e = update_weights(inputs, labels, W, T, eta, delta_rule)
-                W += dW
-                error += e
-            c = compute_cost(e, delta_rule)
+            c, W_new = seq_perceptron(W,inputs,labels,eta,delta_rule) 
+            W = W_new
             cost.append(c)
-            print(c)
+
         plot_classes(inputs, labels)
-        draw_line(W)
-    plot_cost(cost, epochs, delta_rule, use_batch)
+        if(use_seq_batch):
+            draw_two_lines(W_batch, W_seq)
+        else:
+            draw_line(W)
+
+    if(use_seq_batch):
+        plot_cost_comparison(cost_batch, cost_seq, epochs, delta_rule)
+    else:
+        plot_cost(cost, epochs, delta_rule, use_batch)
 plt.ion()
-plt.show()
 
 '''
 NOTES:
@@ -146,7 +206,7 @@ NOTES:
 inputs, labels = generate_binary_data(bias=True, symmetric_labels=False)
 W = generate_weights(inputs)
 
-perceptron(inputs, labels, W, 35, 0.0001, delta_rule=False, use_batch=True)
+perceptron(inputs, labels, W, 20, 0.0001, delta_rule=False, use_batch=False, use_seq_batch=False)
 
 
 plt.show(block=True)
