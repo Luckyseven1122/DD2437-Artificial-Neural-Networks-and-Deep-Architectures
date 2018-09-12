@@ -75,6 +75,10 @@ def generate_binary_data(linear=True, class_modifier=0):
 
 
 def split_data(inputs, labels, test_size, validation_size):
+
+    if test_size + validation_size == 0:
+         return {'inputs': inputs, 'labels': labels}, {'inputs': None  , 'labels': None  }, {'inputs': None  , 'labels': None  }
+
     assert validation_size + test_size < 1
     validation_size = int(inputs.shape[1]*validation_size)
     test_size = int(inputs.shape[1]*test_size)
@@ -140,7 +144,8 @@ def plot_cost(training_cost, validation_cost, epochs, use_batch):
 
     x = np.arange(0, epochs)
     plt.plot(x, training_cost, 'r')
-    plt.plot(x, validation_cost, 'g')
+    if validation_cost:
+        plt.plot(x, validation_cost, 'g')
     #plt.title(title, fontsize=14)
     plt.xlabel('epochs', fontsize=12)
     #plt.ylabel(ylabel, fontsize=12)
@@ -221,9 +226,10 @@ def perceptron(training, validation, test, W, epochs, eta, use_batch=True, use_m
         W[1] += dW[1]
         print("cost", compute_cost(O, labels))
         training_cost.append(compute_cost(O, labels))
-        _O, _ = forward_pass(W, validation['inputs'])
-        print("validation", compute_cost(_O, validation['labels']))
-        validation_cost.append(compute_cost(_O, validation['labels']))
+        if isinstance(validation['inputs'], np.ndarray):
+            _O, _ = forward_pass(W, validation['inputs'])
+            print("validation", compute_cost(_O, validation['labels']))
+            validation_cost.append(compute_cost(_O, validation['labels']))
 
         #plot_classes(inputs, labels)
         #draw_line(W)
@@ -232,8 +238,9 @@ def perceptron(training, validation, test, W, epochs, eta, use_batch=True, use_m
     plot_cost(training_cost, validation_cost, epochs, use_batch)
 
     # test
-    o, _ = forward_pass(W, test['inputs'])
-    print("Test cost:", compute_cost(o, test['labels']))
+    if isinstance(test['inputs'], np.ndarray):
+        o, _ = forward_pass(W, test['inputs'])
+        print("Test cost:", compute_cost(o, test['labels']))
 plt.ion()
 plt.show()
 
@@ -245,7 +252,7 @@ NOTES:
  - not using batch and no delta rule makes model wiggle
 '''
 inputs, labels = generate_binary_data(linear=False, class_modifier=1)
-training, validation, test = split_data(inputs, labels, test_size=0, validation_size=0)
+training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
 W = generate_weights(training['inputs'], 50, he=True)
 
 perceptron(training, validation, test, W, 1000, 0.01, use_batch=True, use_momentum=True)
