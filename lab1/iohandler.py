@@ -36,6 +36,10 @@ def write_array(filename, data):
 def read_array(filename):
 	return np.load(filename+".npy")
 
+def load_data(setname):
+	inputs = read_array(setname+"_inputs.npy")
+	labels = read_array(setname+"_labels.npy")
+	return inputs, labels
 
 '''
 	DEBUG CODE
