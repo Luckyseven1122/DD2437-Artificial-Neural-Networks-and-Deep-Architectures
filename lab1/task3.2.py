@@ -3,10 +3,17 @@ import matplotlib.pyplot as plt
 import math
 
 
-def generate_binary_data(linear=True):
+def generate_binary_data(linear=True, class_modifier=0):
+    '''
+    class_modifier = 0: no subsampling
+    class_modifier = 1: remove random 25% from each class
+    class_modifier = 2: remove 50% from classA (labels = -1)
+    class_modifier = 3: remove 50% from classB (labels = 1 )
+    class_modifier = 4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and
+                        80% from classA(1,:)>0 (i.e x1 > 0)
+    '''
 
-
-    n_points = 300
+    n_points = 20
 
     if linear:
         '''
@@ -41,36 +48,29 @@ def generate_binary_data(linear=True):
     x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
     x[2,n_points:] = 1
 
+    if class_modifier == 1:
+        print(math.floor(x.shape[1]/8))
+        idx = np.arange(math.floor(x.shape[1]/2))
+        idxA = idx[:math.floor(x.shape[1]/4)]
+        idxB = idx[math.floor(x.shape[1]/4)+1:]
+        np.random.shuffle(idxA)
+        np.random.shuffle(idxB)
+        idxA = idxA[:math.floor(x.shape[1]/8)]
+        idxB = idxB[:math.floor(x.shape[1]/8)]
+        idx = np.concatenate((idxA, idxB))
+        x = np.delete(x, idx, axis=1)
+
+
     # shuffle columns in x
-    inputs = np.zeros([2, n_points*2])
-    labels = np.zeros([1, n_points*2])
-    idx = np.random.permutation(n_points*2)
+    inputs = np.zeros([2, x.shape[1]])
+    labels = np.zeros([1, x.shape[1]])
+    idx = np.random.permutation(x.shape[1])
     for i in idx:
         inputs[:2,i] = x[:2,idx[i]]
         labels[0,i] = x[2,idx[i]]
     labels = labels.astype(int)
 
     return inputs, labels
-
-def modify_data(inputs, labels, class_modifier):
-    '''
-    class_modifier = 1: remove random 25% from each class
-    class_modifier = 2: remove 50% from classA (labels = -1)
-    class_modifier = 3: remove 50% from classB (labels = 1 )
-    class_modifier = 4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and
-                        80% from classA(1,:)>0 (i.e x1 > 0)
-    '''
-    n_samples = inputs.shape[1]
-
-    if class_modifier == 1:
-        classA = np.where(labels < 0, -1, 1)
-        idx = np.random.randint(n_samples/2, size=int((n_samples/2)*0.25))
-        #TODO:
-
-
-
-
-
 
 
 
@@ -244,11 +244,10 @@ NOTES:
  - not using batch explodes with large learning rate
  - not using batch and no delta rule makes model wiggle
 '''
-inputs, labels = generate_binary_data(linear=False)
-inputs, labels = modify_data(inputs, labels, 1)
-training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
+inputs, labels = generate_binary_data(linear=False, class_modifier=1)
+training, validation, test = split_data(inputs, labels, test_size=0, validation_size=0)
 W = generate_weights(training['inputs'], 50, he=True)
 
 perceptron(training, validation, test, W, 1000, 0.01, use_batch=True, use_momentum=True)
-
+print(training['inputs'].shape)
 plt.show(block=True)
