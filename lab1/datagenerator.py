@@ -5,9 +5,11 @@ import sys
 import ast
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 import math
 from iohandler import write_array
 from iohandler import read_array
+
 
 '''
 	Generate a full data set from scratch stored as 
@@ -129,6 +131,13 @@ def subsample(filename, class_modifier=1):
 	inputs, labels = shuffle_data(x)
 	return inputs, labels
 
+# Simple plot for generated class
+def plot_classes(inputs, labels):
+    plt.grid(True)
+    plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
+    plt.show()
+    plt.waitforbuttonpress()
+
 # ------------------ Command line interface ------------------------------
 
 def main():
@@ -150,11 +159,11 @@ def main():
 
 	# Main menu
 	menu_choice = input("\n\nMAIN MENU\n" + 
-						 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
+						 ".~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
 						 "|\n|-1: Generate new dataset \n" +
 						 "|\n|-2: Subsample existing dataset \n" +
 						 "|\n|-3: Exit program\n" +
-						 "|\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
+						 "|\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
 						 ">")
 	menu_choice = ast.literal_eval(menu_choice)
 	
@@ -182,7 +191,7 @@ def main():
 		inputs, labels = subsample(filename,cm)
 		write_array(filename + "_cm" + str(cm) + "_inputs", inputs)
 		write_array(filename + "_cm" + str(cm) + "_labels", labels)
-
+		plot_classes(inputs,labels)
 		print("\nData written to " + filename + "_cm" + str(cm) + "_inputs.npy and " + filename + "_cm" + str(cm) + "_labels.npy\n")
 
 		exit()
@@ -216,10 +225,12 @@ def main():
 			inputs, labels = generate_binary_data(filename, linear, n_points, sA, sB, mAx, mAy, mBx, mBy)
 			write_array(filename + "_inputs", inputs)
 			write_array(filename + "_labels", labels)
+			plot_classes(inputs,labels)
 		else:
 			inputs, labels = generate_binary_data(filename, linear, n_points)
 			write_array(filename + "_inputs", inputs)
 			write_array(filename + "_labels", labels)
+			plot_classes(inputs,labels)
 
 		print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
 
