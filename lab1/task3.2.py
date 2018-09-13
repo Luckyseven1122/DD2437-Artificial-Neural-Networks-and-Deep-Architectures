@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import math
@@ -108,14 +108,20 @@ def generate_encoder_data(n_points=50):
 def generate_bell_function():
     x = np.reshape(np.arange(-5, 5, 0.5), (20, 1))
     y = np.reshape(np.arange(-5, 5, 0.5), (20, 1))
+    n_points = x.shape[0] * y.shape[0]
+    xx, yy = np.meshgrid(x, y)
     z = np.dot(np.exp(-x * x * 0.1), np.exp(-y * y * 0.1).T) - 0.5
+    inputs = np.vstack((np.reshape(xx, (1, n_points)), np.reshape(yy, (1, n_points))))
+    labels = np.reshape(z, (1, n_points))
 
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    ax.plot_surface(x,y,z)
-    plt.show()
-    return x, y
-
+    #fig = plt.figure()
+    #ax = fig.add_subplot(1,1,1, projection='3d')
+    #ax.plot_surface(xx,yy,z)
+    #ax.set_xlabel('X axis')
+    #ax.set_ylabel('Y axis')
+    #ax.set_zlabel('Z axis')
+    #plt.show()
+    return inputs, labels
 
 def split_data(inputs, labels, test_size, validation_size):
 
@@ -163,16 +169,19 @@ def draw_line(W):
 
 def plot_cost(training_cost, validation_cost, epochs, use_batch):
     # hold figure until window close
+    plt.waitforbuttonpress()
+    plt.clf()
 
     #ylabel = "error (MSE)" if delta_rule else "error (T/F-ratio)"
     #title += "Gradient ascend w/ batch" if use_batch else "w/o batch"
 
     x = np.arange(0, epochs)
-    plt.plot(x, training_cost, 'r')
+    plt.plot(x, training_cost, 'r', label='training cost')
     if validation_cost:
-        plt.plot(x, validation_cost, 'g')
+        plt.plot(x, validation_cost, 'g', label='validation cost')
     #plt.title(title, fontsize=14)
     plt.xlabel('epochs', fontsize=12)
+    plt.legend()
     #plt.ylabel(ylabel, fontsize=12)
     plt.show()
 
@@ -319,12 +328,12 @@ network_settings = {
 '''
 
 inputs, labels = generate_bell_function()
-training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
+training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
 
 network_settings = {
-    'epochs'       : 20,
-    'eta'          : 0.001,
-    'hidden_nodes' : 50,
+    'epochs'       : 1000,
+    'eta'          : 0.01,
+    'hidden_nodes' : 10,
     'output_dim'   : 1,
     'use_batch'    : True,
     'use_momentum' : True,
