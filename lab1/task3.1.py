@@ -11,9 +11,9 @@ def generate_binary_data(bias = True, symmetric_labels=False):
     Note: axis are set between -3 and 3 on both axis
     Note: Labels (-1, 1)
     '''
-    n_points = 10000
+    n_points = 50
     mA = np.array([ 1.3, 0.5])
-    mB = np.array([-1.2, -0.5])
+    mB = np.array([-1.3, -0.1])
     sigmaA = 0.5
     sigmaB = 0.5
 
@@ -77,9 +77,9 @@ def draw_two_lines(W1, W2):
     x = [-4, 4]
     y1 = [line(W1, x[0]), line(W1, x[1])]
     y2 = [line(W2, x[0]), line(W2, x[1])]
-    plt.plot(x, y1, label='batch')
-    plt.plot(x, y2, label='seq')
-    plt.pause(0.01)
+    plt.plot(x, y1, 'r', label='batch')
+    plt.plot(x, y2, 'b', label='seq')
+    plt.pause(0.1)
     plt.legend()
     plt.show()
 
@@ -143,23 +143,23 @@ def compute_cost(errors, delta_rule):
         return np.where((errors) == 0, 0, 1).mean() # ratio
  
 def seq_perceptron(W, inputs, labels, eta,delta_rule):
-    error = 0
+    cost = 0
     for idx in range(inputs.shape[1]):
         outputs = activation(W, inputs[:,idx,None])
         T = threshold(outputs)
         dW, e = update_weights(inputs[:,idx,None], labels[:,idx,None], W, T, eta, delta_rule)
         W += dW
-        error += e
-    c = compute_cost(e, delta_rule)
-    print("Seq cost: ", c)
-    return c, W
+        cost += compute_cost(e, delta_rule)
+    cost = cost / inputs.shape[0]
+    # print("Seq cost: ", c)
+    return cost, W
 
 def batch_perceptron(W, inputs, labels, eta, delta_rule):
     outputs = activation(W, inputs)
     T = threshold(outputs)
     dW, e = update_weights(inputs, labels, W, T, eta, delta_rule)
     c = compute_cost(e, delta_rule)
-    print("Batch cost: ", c)
+    # print("Batch cost: ", c)
     return c, dW
 
 def perceptron(inputs, labels, W, epochs, eta, delta_rule=False, use_batch=True, use_seq_batch=False):
@@ -173,8 +173,8 @@ def perceptron(inputs, labels, W, epochs, eta, delta_rule=False, use_batch=True,
 
     for i in range(epochs):
         if use_seq_batch:
-            c_batch, dW_batch = batch_perceptron(W_batch,inputs,labels,eta,delta_rule)
-            c_seq, W_new = seq_perceptron(W_seq,inputs,labels,eta,delta_rule) 
+            c_batch, dW_batch = batch_perceptron(W_batch,inputs,labels,0.001,delta_rule)
+            c_seq, W_new = seq_perceptron(W_seq,inputs,labels,0.00001,delta_rule) 
 
             W_batch += dW_batch
             W_seq = W_new
@@ -212,12 +212,12 @@ NOTES:
  - not using batch and no delta rule makes model wiggle
 '''
 
-i, l = generate_binary_data(bias=True, symmetric_labels=False)
-inputs, labels = load_data(sys.argv[1])
-print(inputs.shape, i.shape)
+inputs, labels = generate_binary_data(bias=True, symmetric_labels=True)
+# inputs, labels = load_data(sys.argv[1])
+# print(inputs.shape, i.shape)
 W = generate_weights(inputs)
 
-perceptron(inputs, labels, W, 6, 0.00001, delta_rule=True, use_batch=False, use_seq_batch=True)
+perceptron(inputs, labels, W, 250, 0.01, delta_rule=True, use_batch=False, use_seq_batch=True)
 
 
 plt.show(block=True)
