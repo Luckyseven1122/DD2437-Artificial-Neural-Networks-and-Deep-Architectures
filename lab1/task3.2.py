@@ -1,5 +1,8 @@
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import math
 
 
@@ -102,6 +105,17 @@ def generate_encoder_data(n_points=50):
     return inputs, labels
 
 
+def generate_bell_function():
+    x = np.reshape(np.arange(-5, 5, 0.5), (20, 1))
+    y = np.reshape(np.arange(-5, 5, 0.5), (20, 1))
+    z = np.dot(np.exp(-x * x * 0.1), np.exp(-y * y * 0.1).T) - 0.5
+
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.plot_surface(x,y,z)
+    plt.show()
+    return x, y
+
 
 def split_data(inputs, labels, test_size, validation_size):
 
@@ -130,16 +144,12 @@ def split_data(inputs, labels, test_size, validation_size):
 
 
 def plot_classes(inputs, labels):
-    # force axis for "real-time" update in learning step
-    #plt.clf()
-    #plt.axis([-3, 3, -3, 3])
     plt.grid(True)
     plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
     plt.show()
     plt.waitforbuttonpress()
 
 def line(W, x):
-    #k = -(W.T[2]/W.T[1])/(W.T[2]/W.T[0])
     k = -(W.T[0]/W.T[1])
     m = -W.T[2]/W.T[1]
     return k*x+m
@@ -215,7 +225,7 @@ def update_weights(inputs, H, dO, dH, eta, W_momentum, use_momentum=False):
     return dW, W_momentum
 
 def compute_cost(O, labels):
-    #O = np.where(O > 0, 1, 0)
+    #O = np.where(O > 0, 1, -1)
     #print("o", O)
     #print("labels", labels)
     return np.sum((labels - O)**2)/2
@@ -267,10 +277,6 @@ def perceptron(training, validation, test, settings):
             _O, _ = forward_pass(W, validation['inputs'])
             print("validation", compute_cost(_O, validation['labels']))
             validation_cost.append(compute_cost(_O, validation['labels']))
-
-        #plot_classes(inputs, labels)
-        #draw_line(W)
-
     #plot_decision_boundary(inputs, lambda x: predict(W, x))
     #plot_classes(inputs, labels)
     plot_cost(training_cost, validation_cost, settings['epochs'], settings['use_batch'])
@@ -291,19 +297,38 @@ NOTES:
 '''
 
 #inputs, labels = generate_binary_data(50, linear=False, class_modifier=4)
+
+
+
+
+'''
+# ENCODER PROBLEM SETUP
 inputs, labels = generate_encoder_data(2000)
 training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
 
-
-
+#
 network_settings = {
-    'epochs'       : 400,
+    'epochs'       : 2000,
     'eta'          : 0.001,
     'hidden_nodes' : 3,
     'output_dim'   : 8,
     'use_batch'    : True,
     'use_momentum' : True,
     'he_init'      : True,
+}
+'''
+
+inputs, labels = generate_bell_function()
+training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
+
+network_settings = {
+    'epochs'       : 20,
+    'eta'          : 0.001,
+    'hidden_nodes' : 50,
+    'output_dim'   : 1,
+    'use_batch'    : True,
+    'use_momentum' : True,
+    'he_init'      : False,
 }
 
 perceptron(training, validation, test, network_settings)
