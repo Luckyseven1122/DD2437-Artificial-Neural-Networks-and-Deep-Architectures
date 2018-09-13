@@ -108,19 +108,20 @@ def generate_encoder_data(n_points=50):
 def generate_bell_function():
     x = np.reshape(np.arange(-5, 5, 0.5), (20, 1))
     y = np.reshape(np.arange(-5, 5, 0.5), (20, 1))
+    n_points = x.shape[0] * y.shape[0]
     xx, yy = np.meshgrid(x, y)
     z = np.dot(np.exp(-x * x * 0.1), np.exp(-y * y * 0.1).T) - 0.5
+    inputs = np.vstack((np.reshape(xx, (1, n_points)), np.reshape(yy, (1, n_points))))
+    labels = np.reshape(z, (1, n_points))
 
-
-    fig = plt.figure()
-    ax = fig.add_subplot(1,1,1, projection='3d')
-    ax.plot_surface(xx,yy,z)
-    ax.set_xlabel('X axis')
-    ax.set_ylabel('Y axis')
-    ax.set_zlabel('Z axis')
-    plt.show()
-    return xx.reshape(1, 400), z.reshape(1,400)
-
+    #fig = plt.figure()
+    #ax = fig.add_subplot(1,1,1, projection='3d')
+    #ax.plot_surface(xx,yy,z)
+    #ax.set_xlabel('X axis')
+    #ax.set_ylabel('Y axis')
+    #ax.set_zlabel('Z axis')
+    #plt.show()
+    return inputs, labels
 
 def split_data(inputs, labels, test_size, validation_size):
 
@@ -327,12 +328,12 @@ network_settings = {
 '''
 
 inputs, labels = generate_bell_function()
-training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
+training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
 
 network_settings = {
-    'epochs'       : 100,
+    'epochs'       : 1000,
     'eta'          : 0.01,
-    'hidden_nodes' : 500,
+    'hidden_nodes' : 10,
     'output_dim'   : 1,
     'use_batch'    : True,
     'use_momentum' : True,
