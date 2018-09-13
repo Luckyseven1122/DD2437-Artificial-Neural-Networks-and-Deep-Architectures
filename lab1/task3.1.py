@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+from iohandler import load_data
 import matplotlib.pyplot as plt
 
 
@@ -38,6 +40,7 @@ def generate_binary_data(bias = True, symmetric_labels=False):
 
 
 def generate_weights(inputs):
+    print('inputs.shape',inputs.shape)
     W = np.random.normal(0, 0.001, (1, inputs.shape[0]))
     # Set bias weight to zero
     if inputs[2,0] == 0:
@@ -203,7 +206,8 @@ NOTES:
  - not using batch and no delta rule makes model wiggle
 '''
 
-inputs, labels = generate_binary_data(bias=True, symmetric_labels=False)
+#inputs, labels = generate_binary_data(bias=True, symmetric_labels=False)
+inputs, labels = load_data(sys.argv[1])
 W = generate_weights(inputs)
 
 perceptron(inputs, labels, W, 20, 0.0001, delta_rule=False, use_batch=False, use_seq_batch=False)

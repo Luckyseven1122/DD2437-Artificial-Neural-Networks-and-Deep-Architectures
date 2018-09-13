@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib
 # matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+import sys
+from iohandler import load_data
 from mpl_toolkits.mplot3d import Axes3D
 import math
 
@@ -327,7 +329,8 @@ network_settings = {
 }
 '''
 
-inputs, labels = generate_bell_function()
+#inputs, labels = generate_bell_function()
+inputs, labels = load_data(sys.argv[1])
 training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
 
 network_settings = {
