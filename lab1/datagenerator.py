@@ -53,6 +53,9 @@ def generate_binary_data(linear=True, class_modifier=0, n_points = 50, sA = -1, 
     x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
     x[2,n_points:] = 1
 
+    print('x.shape: ', x.shape)
+    asd
+
     if class_modifier == 1:
         idx = np.arange(math.floor(x.shape[1]/2))
         idxA = idx[:math.floor(x.shape[1]/4)]
@@ -101,64 +104,68 @@ def generate_binary_data(linear=True, class_modifier=0, n_points = 50, sA = -1, 
 
 # ------------------ Command line interface ------------------------------
 
+def main():
 
-# Clear terminal window
-os.system('cls' if os.name == 'nt' else 'clear')
+    # Clear terminal window
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-# Print logo
-print("\n\n_______ _________ ______   _______    ______   _______  _______  _______\n" + 
-"(  ____ \\__   __/(  __  \ (  ____ \  (  ___ \ (  ____ )(  ___  )(  ____ )\n" +
-"| (    \/   ) (   | (  \  )| (    \/  | (   ) )| (    )|| (   ) || (    )|\n" +
-"| (__       | |   | |   ) || (__      | (__/ / | (____)|| |   | || (____)|\n" +
-"|  __)      | |   | |   | ||  __)     |  __ (  |     __)| |   | ||     __)\n" +
-"| (         | |   | |   ) || (        | (  \ \ | (\ (   | |   | || (\ (   \n" +
-"| (____/\___) (___| (__/  )| (____/\  | )___) )| ) \ \__| (___) || ) \ \__\n" +
-"(_______/\_______/(______/ (_______/  |/ \___/ |/   \__/(_______)|/   \__/\n" +
-"Ultimate Data Generator 1.9 Flex Edition XP\n" + 
-"Presented by Google, Microsoft and Uber\n\n")
+    # Print logo
+    print("\n\n_______ _________ ______   _______    ______   _______  _______  _______\n" + 
+    "(  ____ \\__   __/(  __  \ (  ____ \  (  ___ \ (  ____ )(  ___  )(  ____ )\n" +
+    "| (    \/   ) (   | (  \  )| (    \/  | (   ) )| (    )|| (   ) || (    )|\n" +
+    "| (__       | |   | |   ) || (__      | (__/ / | (____)|| |   | || (____)|\n" +
+    "|  __)      | |   | |   | ||  __)     |  __ (  |     __)| |   | ||     __)\n" +
+    "| (         | |   | |   ) || (        | (  \ \ | (\ (   | |   | || (\ (   \n" +
+    "| (____/\___) (___| (__/  )| (____/\  | )___) )| ) \ \__| (___) || ) \ \__\n" +
+    "(_______/\_______/(______/ (_______/  |/ \___/ |/   \__/(_______)|/   \__/\n" +
+    "Ultimate Data Generator 1.9 Flex Edition XP\n" + 
+    "Presented by Google, Microsoft and Uber\n\n")
 
-# Ask for relevant parameters
-filename = input("\nEnter target filename --------------------------- \n>")
+    # Ask for relevant parameters
+    filename = input("\nEnter target filename --------------------------- \n>")
 
-n_points = input("\nEnter number of data points per class ----------- \n>") 
-n_points = ast.literal_eval(n_points)
+    n_points = input("\nEnter number of data points per class ----------- \n>") 
+    n_points = ast.literal_eval(n_points)
 
-cm = input(
-	"\nChoose class modifier --------------------------- \n" +
- 	"0: no subsampling \n" + 
- 	"1: remove random 25% from each class \n" +
- 	"2: remove 50% from classA (labels = -1) \n" +
- 	"3: remove 50% from classB (labels = 1 ) \n" +
- 	"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>") 
-cm = ast.literal_eval(cm)
+    cm = input(
+    	"\nChoose class modifier --------------------------- \n" +
+     	"0: no subsampling \n" + 
+     	"1: remove random 25% from each class \n" +
+     	"2: remove 50% from classA (labels = -1) \n" +
+     	"3: remove 50% from classB (labels = 1 ) \n" +
+     	"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>") 
+    cm = ast.literal_eval(cm)
 
-cparams = input("\nSet custom parameters for each class? Y / N ----- \n>")
-cparams = True if cparams == "Y" else False
+    cparams = input("\nSet custom parameters for each class? Y / N ----- \n>")
+    cparams = True if cparams == "Y" else False
 
-linear = input("\nUse linear formula for data generation? Y / N ---- \n>")
-linear = True if linear == "Y" else False
+    linear = input("\nUse linear formula for data generation? Y / N ---- \n>")
+    linear = True if linear == "Y" else False
 
-if cparams:
-    sA = input("\nEnter sigma for class A (default " + "0.4)\n>" if linear else "0.3)\n>")
-    sA = ast.literal_eval(sA)
-    sB = input("\nEnter sigma for class B (default " + "0.4)\n>" if linear else "0.3)\n>")
-    sB = ast.literal_eval(sB)
-    mAx = input("\nEnter x coordinate for center of class A (default " + "1.5)\n>" if linear else "1.0)\n>")
-    mAx = ast.literal_eval(mAx)
-    mAy = input("\nEnter y coordinate for center of class A (default " + "0.5)\n>" if linear else "0.3)\n>")
-    mAy = ast.literal_eval(mAy)
-    mBx = input("\nEnter x coordinate for center of class B (default " + "-1.5)\n>" if linear else "0.0)\n>")
-    mBx = ast.literal_eval(mBx)
-    mBy = input("\nEnter y coordinate for center of class B (default " + "-0.5)\n>" if linear else "0.0)\n>")
-    mBy = ast.literal_eval(mBy)
+    if cparams:
+        sA = input("\nEnter sigma for class A (default " + "0.4)\n>" if linear else "0.3)\n>")
+        sA = ast.literal_eval(sA)
+        sB = input("\nEnter sigma for class B (default " + "0.4)\n>" if linear else "0.3)\n>")
+        sB = ast.literal_eval(sB)
+        mAx = input("\nEnter x coordinate for center of class A (default " + "1.5)\n>" if linear else "1.0)\n>")
+        mAx = ast.literal_eval(mAx)
+        mAy = input("\nEnter y coordinate for center of class A (default " + "0.5)\n>" if linear else "0.3)\n>")
+        mAy = ast.literal_eval(mAy)
+        mBx = input("\nEnter x coordinate for center of class B (default " + "-1.5)\n>" if linear else "0.0)\n>")
+        mBx = ast.literal_eval(mBx)
+        mBy = input("\nEnter y coordinate for center of class B (default " + "-0.5)\n>" if linear else "0.0)\n>")
+        mBy = ast.literal_eval(mBy)
 
-    inputs, labels = generate_binary_data(linear,cm,n_points, sA, sB, mAx, mAy, mBx, mBy)
-    write_array(filename + "_inputs", inputs)
-    write_array(filename + "_labels", labels)
-else:
-    inputs, labels = generate_binary_data(linear,cm,n_points)
-    write_array(filename + "_inputs", inputs)
-    write_array(filename + "_labels", labels)
+        inputs, labels = generate_binary_data(linear,cm,n_points, sA, sB, mAx, mAy, mBx, mBy)
+        write_array(filename + "_inputs", inputs)
+        write_array(filename + "_labels", labels)
+    else:
+        inputs, labels = generate_binary_data(linear,cm,n_points)
+        write_array(filename + "_inputs", inputs)
+        write_array(filename + "_labels", labels)
 
-print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
+    print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
 
+
+if __name__ == '__main__':
+        main()
