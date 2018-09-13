@@ -173,8 +173,8 @@ def perceptron(inputs, labels, W, epochs, eta, delta_rule=False, use_batch=True,
 
     for i in range(epochs):
         if use_seq_batch:
-            c_batch, dW_batch = batch_perceptron(W_batch,inputs,labels,0.001,delta_rule)
-            c_seq, W_new = seq_perceptron(W_seq,inputs,labels,0.00001,delta_rule) 
+            c_batch, dW_batch = batch_perceptron(W_batch,inputs,labels,eta,delta_rule)
+            c_seq, W_new = seq_perceptron(W_seq,inputs,labels,eta,delta_rule)
 
             W_batch += dW_batch
             W_seq = W_new
