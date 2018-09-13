@@ -52,10 +52,7 @@ def generate_binary_data(linear=True, class_modifier=0, n_points = 50, sA = -1, 
     x[0,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[0]
     x[1,n_points:] = np.random.randn(1, n_points) * sigmaB + mB[1]
     x[2,n_points:] = 1
-
-    print('x.shape: ', x.shape)
-    asd
-
+    
     if class_modifier == 1:
         idx = np.arange(math.floor(x.shape[1]/2))
         idxA = idx[:math.floor(x.shape[1]/4)]
