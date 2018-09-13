@@ -212,9 +212,11 @@ NOTES:
  - not using batch and no delta rule makes model wiggle
 '''
 
-inputs, labels = generate_binary_data(bias=True, symmetric_labels=True)
-# inputs, labels = load_data(sys.argv[1])
-# print(inputs.shape, i.shape)
+# inputs, labels = generate_binary_data(bias=True, symmetric_labels=True)
+inputs, labels = load_data(sys.argv[1])
+bias = np.ones(inputs.shape[1])
+inputs = np.vstack([inputs, bias])
+
 W = generate_weights(inputs)
 
 perceptron(inputs, labels, W, 250, 0.01, delta_rule=True, use_batch=False, use_seq_batch=True)
