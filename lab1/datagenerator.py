@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import math
 from iohandler import write_array
 from iohandler import read_array
+from iohandler import load_data
 
 
 '''
@@ -142,99 +143,112 @@ def plot_classes(inputs, labels):
 
 def main():
 
-	# Clear terminal window
-	os.system('cls' if os.name == 'nt' else 'clear')
+	quit = False
 
-	# Print logo
-	print("\n\n_______ _________ ______   _______    ______   _______  _______  _______\n" + 
-	"(  ____ \\__   __/(  __  \ (  ____ \  (  ___ \ (  ____ )(  ___  )(  ____ )\n" +
-	"| (    \/   ) (   | (  \  )| (    \/  | (   ) )| (    )|| (   ) || (    )|\n" +
-	"| (__       | |   | |   ) || (__      | (__/ / | (____)|| |   | || (____)|\n" +
-	"|  __)      | |   | |   | ||  __)     |  __ (  |     __)| |   | ||     __)\n" +
-	"| (         | |   | |   ) || (        | (  \ \ | (\ (   | |   | || (\ (   \n" +
-	"| (____/\___) (___| (__/  )| (____/\  | )___) )| ) \ \__| (___) || ) \ \__\n" +
-	"(_______/\_______/(______/ (_______/  |/ \___/ |/   \__/(_______)|/   \__/\n" +
-	"Ultimate Data Generator 1.9 Flex Edition XP\n" + 
-	"Presented by Google, Microsoft and Uber\n\n")
+	while quit == False:
 
-	# Main menu
-	menu_choice = input("\n\nMAIN MENU\n" + 
-						 ".~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
-						 "|\n|-1: Generate new dataset \n" +
-						 "|\n|-2: Subsample existing dataset \n" +
-						 "|\n|-3: Exit program\n" +
-						 "|\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
-						 ">")
-	menu_choice = ast.literal_eval(menu_choice)
-	
-	if (menu_choice < 1) or (menu_choice > 2):
-		exit()
+		# Clear terminal window
+		os.system('cls' if os.name == 'nt' else 'clear')
 
-	filename = input("\nEnter target filename --------------------------- \n>")
-	
+		# Print logo
+		print("\n\n_______ _________ ______   _______    ______   _______  _______  _______\n" + 
+		"(  ____ \\__   __/(  __  \ (  ____ \  (  ___ \ (  ____ )(  ___  )(  ____ )\n" +
+		"| (    \/   ) (   | (  \  )| (    \/  | (   ) )| (    )|| (   ) || (    )|\n" +
+		"| (__       | |   | |   ) || (__      | (__/ / | (____)|| |   | || (____)|\n" +
+		"|  __)      | |   | |   | ||  __)     |  __ (  |     __)| |   | ||     __)\n" +
+		"| (         | |   | |   ) || (        | (  \ \ | (\ (   | |   | || (\ (   \n" +
+		"| (____/\___) (___| (__/  )| (____/\  | )___) )| ) \ \__| (___) || ) \ \__\n" +
+		"(_______/\_______/(______/ (_______/  |/ \___/ |/   \__/(_______)|/   \__/\n" +
+		"Ultimate Data Generator 1.9 Flex Edition XP\n" + 
+		"Presented by Google, Microsoft and Uber\n\n")
 
-	if menu_choice == 2:
-		# Ask for class modifier
-		cm = input(
-			"\nChoose class modifier --------------------------- \n" +
-			"1: remove random 25% from each class \n" +
-			"2: remove 50% from classA (labels = -1) \n" +
-			"3: remove 50% from classB (labels = 1 ) \n" +
-			"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>") 
-		cm = ast.literal_eval(cm)
-		if (cm < 1) or (cm > 4):
-			print("\nInvalid class modifier specified. Exiting.\n")
+		# Main menu
+		menu_choice = input("\n\nMAIN MENU\n" + 
+							 ".~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
+							 "|\n|-1: Generate new dataset \n" +
+							 "|\n|-2: Subsample existing dataset \n" +
+							 "|\n|-3: Plot existing dataset \n" +
+							 "|\n|-Other: Exit program\n" +
+							 "|\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
+							 ">")
+		menu_choice = ast.literal_eval(menu_choice)
+		
+		if (menu_choice < 1) or (menu_choice > 3):
 			exit()
 
-		# Perform sub-sampling
-
-		inputs, labels = subsample(filename,cm)
-		write_array(filename + "_cm" + str(cm) + "_inputs", inputs)
-		write_array(filename + "_cm" + str(cm) + "_labels", labels)
-		plot_classes(inputs,labels)
-		print("\nData written to " + filename + "_cm" + str(cm) + "_inputs.npy and " + filename + "_cm" + str(cm) + "_labels.npy\n")
-
-		exit()
-
-	if menu_choice == 1:
-
-		# Ask for relevant parameters
-		n_points = input("\nEnter number of data points per class ----------- \n>") 
-		n_points = ast.literal_eval(n_points)
-
-		cparams = input("\nSet custom parameters for each class? Y / N ----- \n>")
-		cparams = True if cparams == "Y" else False
-
-		linear = input("\nUse linear formula for data generation? Y / N ---- \n>")
-		linear = True if linear == "Y" else False
-
-		if cparams:
-			sA = input("\nEnter sigma for class A (default " + "0.4)\n>" if linear else "0.3)\n>")
-			sA = ast.literal_eval(sA)
-			sB = input("\nEnter sigma for class B (default " + "0.4)\n>" if linear else "0.3)\n>")
-			sB = ast.literal_eval(sB)
-			mAx = input("\nEnter x coordinate for center of class A (default " + "1.5)\n>" if linear else "1.0)\n>")
-			mAx = ast.literal_eval(mAx)
-			mAy = input("\nEnter y coordinate for center of class A (default " + "0.5)\n>" if linear else "0.3)\n>")
-			mAy = ast.literal_eval(mAy)
-			mBx = input("\nEnter x coordinate for center of class B (default " + "-1.5)\n>" if linear else "0.0)\n>")
-			mBx = ast.literal_eval(mBx)
-			mBy = input("\nEnter y coordinate for center of class B (default " + "-0.5)\n>" if linear else "0.0)\n>")
-			mBy = ast.literal_eval(mBy)
-
-			inputs, labels = generate_binary_data(filename, linear, n_points, sA, sB, mAx, mAy, mBx, mBy)
-			write_array(filename + "_inputs", inputs)
-			write_array(filename + "_labels", labels)
+		filename = input("\nEnter target filename --------------------------- \n>")
+		
+		if menu_choice == 3:
+			inputs, labels = load_data(filename)
 			plot_classes(inputs,labels)
-		else:
-			inputs, labels = generate_binary_data(filename, linear, n_points)
-			write_array(filename + "_inputs", inputs)
-			write_array(filename + "_labels", labels)
+			mm_query = input("\nReturn to main menu? Y / N \n>")
+			quit = False if mm_query == "Y" else True
+
+		if menu_choice == 2:
+			# Ask for class modifier
+			cm = input(
+				"\nChoose class modifier --------------------------- \n" +
+				"1: remove random 25% from each class \n" +
+				"2: remove 50% from classA (labels = -1) \n" +
+				"3: remove 50% from classB (labels = 1 ) \n" +
+				"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>") 
+			cm = ast.literal_eval(cm)
+			if (cm < 1) or (cm > 4):
+				print("\nInvalid class modifier specified. Exiting.\n")
+				mm_query = input("\nReturn to main menu? Y / N \n>")
+				quit = False if mm_query == "Y" else True
+
+			# Perform sub-sampling
+
+			inputs, labels = subsample(filename,cm)
+			write_array(filename + "_cm" + str(cm) + "_inputs", inputs)
+			write_array(filename + "_cm" + str(cm) + "_labels", labels)
 			plot_classes(inputs,labels)
+			print("\nData written to " + filename + "_cm" + str(cm) + "_inputs.npy and " + filename + "_cm" + str(cm) + "_labels.npy\n")
 
-		print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
+			mm_query = input("\nReturn to main menu? Y / N \n>")
+			quit = False if mm_query == "Y" else True
 
-		exit()
+		if menu_choice == 1:
+
+			# Ask for relevant parameters
+			n_points = input("\nEnter number of data points per class ----------- \n>") 
+			n_points = ast.literal_eval(n_points)
+
+			cparams = input("\nSet custom parameters for each class? Y / N ----- \n>")
+			cparams = True if cparams == "Y" else False
+
+			linear = input("\nUse linear formula for data generation? Y / N ---- \n>")
+			linear = True if linear == "Y" else False
+
+			if cparams:
+				sA = input("\nEnter sigma for class A (default " + "0.4)\n>" if linear else "0.3)\n>")
+				sA = ast.literal_eval(sA)
+				sB = input("\nEnter sigma for class B (default " + "0.4)\n>" if linear else "0.3)\n>")
+				sB = ast.literal_eval(sB)
+				mAx = input("\nEnter x coordinate for center of class A (default " + "1.5)\n>" if linear else "1.0)\n>")
+				mAx = ast.literal_eval(mAx)
+				mAy = input("\nEnter y coordinate for center of class A (default " + "0.5)\n>" if linear else "0.3)\n>")
+				mAy = ast.literal_eval(mAy)
+				mBx = input("\nEnter x coordinate for center of class B (default " + "-1.5)\n>" if linear else "0.0)\n>")
+				mBx = ast.literal_eval(mBx)
+				mBy = input("\nEnter y coordinate for center of class B (default " + "-0.5)\n>" if linear else "0.0)\n>")
+				mBy = ast.literal_eval(mBy)
+
+				inputs, labels = generate_binary_data(filename, linear, n_points, sA, sB, mAx, mAy, mBx, mBy)
+				write_array(filename + "_inputs", inputs)
+				write_array(filename + "_labels", labels)
+				plot_classes(inputs,labels)
+			else:
+				inputs, labels = generate_binary_data(filename, linear, n_points)
+				write_array(filename + "_inputs", inputs)
+				write_array(filename + "_labels", labels)
+				plot_classes(inputs,labels)
+
+			print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
+
+			mm_query = input("\nReturn to main menu? Y / N \n>")
+			quit = False if mm_query == "Y" else True
 
 
 if __name__ == '__main__':
