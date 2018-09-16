@@ -1,6 +1,12 @@
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+print("Tensorflow version",tf.VERSION)
+
+'''
+    INSTALL TENSORFLOW:
+    pip3 install -r requirements.txt
+'''
 
 
 def mg_time_series(t_stop):
