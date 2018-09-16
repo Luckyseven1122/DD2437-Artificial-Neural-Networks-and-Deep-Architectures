@@ -9,6 +9,21 @@ print("Tensorflow version",tf.VERSION)
 '''
 
 
+def plot_prediction(prediction, test):
+    t = np.arange(0, test.shape[0])
+    p = np.array(prediction)
+    plt.plot(t, p)
+    plt.plot(t, test)
+    plt.show()
+
+def plot_cost(train, valid, epochs):
+    x = np.arange(0, epochs)
+    plt.plot(x, np.array(train), 'r', label='training cost')
+    plt.plot(x, np.array(valid), 'b', label='validation cost')
+    plt.xlabel('epochs', fontsize=12)
+    plt.legend()
+    plt.show()
+
 def mg_time_series(t_stop):
     '''
     x(t+1) = x(t) + (0.2 * x(t-25))/(1 + x^10(t-25)) - 0.1x(t)
@@ -45,6 +60,11 @@ def generate_data(t_start, t_stop, validation_percentage):
     inputs = [x[t-20], x[t-15], x[t-10], x[t-5], x[t]]
     inputs = np.asarray(inputs)
     labels = x[t+5]
+
+    # does any difference?
+    #idx = np.random.permutation(inputs.shape[1])
+    #inputs = inputs[:,idx]
+    #labels = labels[idx]
 
     # size of test according to task description
     test_size = 200
@@ -106,10 +126,17 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
         sess.run(tf.global_variables_initializer())
         for e in range(settings['epochs']):
             _, c_train = sess.run([optimizer, cost], feed_dict={inputs: training['inputs'], labels: training['labels']})
+            c_valid = sess.run(cost, feed_dict={inputs: validation['inputs'], labels: validation['labels']})
             cost_training.append(c_train)
-            print('training cost:', c_train)
+            cost_validation.append(c_valid)
+            print('training cost:', c_train, 'valid cost:', c_valid)
 
+        c_test = sess.run(cost, feed_dict={inputs: test['inputs'], labels: test['labels']})
+        print('Test:', c_test)
+        prediction = sess.run(prediction, feed_dict={inputs: test['inputs']})
+        print(prediction)
 
+    return cost_training, cost_validation, prediction
 '''
 EXECUTION STARTS HERE
 '''
@@ -118,15 +145,15 @@ training, validation, test = generate_data(300, 1500, 0.2)
 
 network_settings = {
     # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-    'layers': [50, 5],
+    'layers': [7, 3],
     'inputs_dim': int(training['inputs'].shape[1]),
     'outputs_dim': 1,
-    'beta': 0
+    'beta': 0.3
 }
 
 training_settings = {
-    'epochs': 100,
-    'eta': 0.001,
+    'epochs': 1000,
+    'eta': 0.2,
 }
 
 #inputs = tf.placeholder('float', training['inputs'].shape)
@@ -137,6 +164,9 @@ labels = tf.placeholder('float')
 
 prediction, regularization = network(inputs, network_settings)
 cost = tf.reduce_mean(tf.square(prediction - labels) + regularization)
-optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
 
-train_network(training, validation, test, training_settings, prediction, optimizer, cost)
+optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
+cost_training, cost_validation, prediction = train_network(training, validation, test, training_settings, prediction, optimizer, cost)
+
+#plot_cost(cost_training, cost_validation, training_settings['epochs'])
+plot_prediction(prediction, test['labels'])
