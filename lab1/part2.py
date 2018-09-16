@@ -73,6 +73,7 @@ def network(inputs, settings):
     assert len(settings['layers']) > 0
     assert settings['inputs_dim'] > 0
     assert settings['outputs_dim'] > 0
+    assert settings['beta'] >= 0
 
     layers = []
     for idx, nodes in enumerate(settings['layers']):
@@ -91,17 +92,23 @@ def network(inputs, settings):
             output = tf.add(tf.matmul(layers[-1], W), b)
             # threshold ????
             # output = tf.tanh(output)
-            return output
+            weights = tf.trainable_variables()
+            regularization = tf.add_n([ tf.nn.l2_loss(w) for w in weights if 'bias' not in w.name]) * settings['beta']
+            return output, regularization
 
 
-def train_network(training, validation, test, settings, optimizer, cost):
+def train_network(training, validation, test, settings, prediction, optimizer, cost):
+    cost_training = []
+    cost_validation = []
     assert settings['epochs'] > 0
     print('Training starts')
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         for e in range(settings['epochs']):
-            _, c = sess.run([optimizer, cost], feed_dict={inputs: training['inputs'], labels: training['labels']})
-            print(c)
+            _, c_train = sess.run([optimizer, cost], feed_dict={inputs: training['inputs'], labels: training['labels']})
+            cost_training.append(c_train)
+            print('training cost:', c_train)
+
 
 '''
 EXECUTION STARTS HERE
@@ -113,20 +120,23 @@ network_settings = {
     # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
     'layers': [50, 5],
     'inputs_dim': int(training['inputs'].shape[1]),
-    'outputs_dim': 1
+    'outputs_dim': 1,
+    'beta': 0
 }
 
 training_settings = {
-    'epochs': 1000,
+    'epochs': 100,
     'eta': 0.001,
 }
 
-inputs = tf.placeholder('float', training['inputs'].shape)
-labels = tf.placeholder('float', training['labels'].shape)
+#inputs = tf.placeholder('float', training['inputs'].shape)
+#labels = tf.placeholder('float', training['labels'].shape)
 
+inputs = tf.placeholder('float')
+labels = tf.placeholder('float')
 
-prediction = network(inputs, network_settings)
-cost = tf.reduce_mean(tf.square(prediction - labels))
+prediction, regularization = network(inputs, network_settings)
+cost = tf.reduce_mean(tf.square(prediction - labels) + regularization)
 optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
 
-train_network(training, validation, test, training_settings, optimizer, cost)
+train_network(training, validation, test, training_settings, prediction, optimizer, cost)
