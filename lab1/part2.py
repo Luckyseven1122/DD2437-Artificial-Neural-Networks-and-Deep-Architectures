@@ -134,8 +134,6 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
         c_test = sess.run(cost, feed_dict={inputs: test['inputs'], labels: test['labels']})
         print('Test:', c_test)
         prediction = sess.run(prediction, feed_dict={inputs: test['inputs']})
-        print(prediction)
-
     return cost_training, cost_validation, prediction
 '''
 EXECUTION STARTS HERE
@@ -145,14 +143,14 @@ training, validation, test = generate_data(300, 1500, 0.2)
 
 network_settings = {
     # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-    'layers': [7, 3],
+    'layers': [3],
     'inputs_dim': int(training['inputs'].shape[1]),
     'outputs_dim': 1,
-    'beta': 0.3
+    'beta': 0.00001
 }
 
 training_settings = {
-    'epochs': 1000,
+    'epochs': 100,
     'eta': 0.2,
 }
 
@@ -163,8 +161,9 @@ inputs = tf.placeholder('float')
 labels = tf.placeholder('float')
 
 prediction, regularization = network(inputs, network_settings)
-cost = tf.reduce_mean(tf.square(prediction - labels) + regularization)
+cost = tf.reduce_mean(tf.square(prediction - labels) + tf.square(regularization))
 
+#optimizer = tf.train.AdamOptimizer(training_settings['eta']).minimize(cost)
 optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
 cost_training, cost_validation, prediction = train_network(training, validation, test, training_settings, prediction, optimizer, cost)
 
