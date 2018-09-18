@@ -40,7 +40,6 @@ def generate_binary_data(bias = True, symmetric_labels=False):
 
 
 def generate_weights(inputs):
-    print('inputs.shape',inputs.shape)
     W = np.random.normal(0, 0.1, (1, inputs.shape[0]))
     # Set bias weight to zero
     if inputs[2,0] == 0:
@@ -50,6 +49,7 @@ def generate_weights(inputs):
 def plot_classes(inputs, labels):
     # force axis for "real-time" update in learning step
     plt.clf()
+    plt.subplot(2, 2, 1)
     plt.axis([-3, 3, -3, 3])
     plt.grid(True)
     plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
@@ -63,8 +63,12 @@ def line(W, x):
     return k*x+m
 
 def draw_line(W):
+    title = "Delta learning rule" if delta_rule else "Perceptron learning rule"
+    title += "w/ batch" if use_batch else "w/o batch"
+    plt.title(title, fontsize=14)
     x = [-4, 4]
     y = [line(W, x[0]), line(W, x[1])]
+    plt.subplot(2, 2, 1)
     plt.plot(x, y)
     plt.pause(0.01)
     plt.show()
@@ -79,13 +83,19 @@ def draw_two_lines(W1, W2):
     y2 = [line(W2, x[0]), line(W2, x[1])]
     plt.plot(x, y1, 'r', label='batch')
     plt.plot(x, y2, 'b', label='seq')
+
+    title = "Classification with a single-layer perceptron - delta rule"
+    plt.title(title, fontsize=14)
+
     plt.pause(0.1)
     plt.legend()
     plt.show()
 
 def plot_cost(cost, epochs, delta_rule, use_batch):
     # hold figure until window close
-    plt.waitforbuttonpress()
+    # plt.waitforbuttonpress()
+
+    plt.subplot(2, 2, 2)
 
     ylabel = "error (MSE)" if delta_rule else "error (T/F-ratio)"
     title = "Delta learning rule " if delta_rule else "Perceptron learning rule "
@@ -100,9 +110,11 @@ def plot_cost(cost, epochs, delta_rule, use_batch):
 
 def plot_cost_comparison(cost_batch,cost_seq, epochs, delta_rule):
     # hold figure until window close
-    plt.waitforbuttonpress()
-    plt.clf()
-    plt.grid(True)
+    # plt.waitforbuttonpress()
+    # plt.clf()
+    # plt.grid(True)
+
+    plt.subplot(2, 2, 2)
 
     ylabel = "error (MSE)" if delta_rule else "error (T/F-ratio)"
     title = "Delta learning rule " if delta_rule else "Perceptron learning rule "
@@ -150,8 +162,8 @@ def seq_perceptron(W, inputs, labels, eta,delta_rule):
         dW, e = update_weights(inputs[:,idx,None], labels[:,idx,None], W, T, eta, delta_rule)
         W += dW
         cost += compute_cost(e, delta_rule)
-    cost = cost / inputs.shape[0]
-    # print("Seq cost: ", c)
+    cost = cost / inputs.shape[1]
+    # print("Seq cost: ", cost)
     return cost, W
 
 def batch_perceptron(W, inputs, labels, eta, delta_rule):
@@ -210,16 +222,20 @@ NOTES:
  - Perceptron rule must use asymmetric labels
  - not using batch explodes with large learning rate
  - not using batch and no delta rule makes model wiggle
+ - PERCEPTION OSYMETRISKA LABELS
 '''
-
-# inputs, labels = generate_binary_data(bias=True, symmetric_labels=True)
-inputs, labels = load_data(sys.argv[1])
+fig = plt.figure()
+plt.subplot(2, 2, 1)
+inputs, labels = generate_binary_data(bias=False, symmetric_labels=True)
+# inputs, labels = load_data(sys.argv[1])
 bias = np.ones(inputs.shape[1])
 inputs = np.vstack([inputs, bias])
 
 W = generate_weights(inputs)
 
-perceptron(inputs, labels, W, 250, 0.01, delta_rule=True, use_batch=False, use_seq_batch=True)
+use_batch = False
+delta_rule = False
 
+perceptron(inputs, labels, W, 50, 0.001, delta_rule=delta_rule, use_batch=use_batch, use_seq_batch=True)
 
 plt.show(block=True)
