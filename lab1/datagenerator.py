@@ -139,6 +139,39 @@ def plot_classes(inputs, labels):
     plt.show()
     plt.waitforbuttonpress()
 
+def print_logo():
+ 	# Clear terminal window
+	os.system('cls' if os.name == 'nt' else 'clear')
+
+	# Print logo
+	print("\n\n_______ _________ ______   _______    ______   _______  _______  _______\n" + 
+	"(  ____ \\__   __/(  __  \ (  ____ \  (  ___ \ (  ____ )(  ___  )(  ____ )\n" +
+	"| (    \/   ) (   | (  \  )| (    \/  | (   ) )| (    )|| (   ) || (    )|\n" +
+	"| (__       | |   | |   ) || (__      | (__/ / | (____)|| |   | || (____)|\n" +
+	"|  __)      | |   | |   | ||  __)     |  __ (  |     __)| |   | ||     __)\n" +
+	"| (         | |   | |   ) || (        | (  \ \ | (\ (   | |   | || (\ (   \n" +
+	"| (____/\___) (___| (__/  )| (____/\  | )___) )| ) \ \__| (___) || ) \ \__\n" +
+	"(_______/\_______/(______/ (_______/  |/ \___/ |/   \__/(_______)|/   \__/\n" +
+	"Ultimate Data Generator 1.9 Flex Edition XP\n" + 
+	"Presented by Google, Microsoft and Uber\n\n")
+
+def print_menu():
+	# Main menu
+	menu_choice = input("\nMAIN MENU\n" + 
+						 ".~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
+						 "|\n|-1: Generate new dataset \n" +
+						 "|\n|-2: Subsample existing dataset \n" +
+						 "|\n|-3: Plot existing dataset \n" +
+						 "|\n|-Other: Exit program\n" +
+						 "|\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
+						 ">")
+	menu_choice = ast.literal_eval(menu_choice)
+	
+	if (menu_choice < 1) or (menu_choice > 3):
+		exit()
+
+	return menu_choice
+
 # ------------------ Command line interface ------------------------------
 
 def main():
@@ -147,44 +180,23 @@ def main():
 
 	while quit == False:
 
-		# Clear terminal window
-		os.system('cls' if os.name == 'nt' else 'clear')
+		print_logo()
 
-		# Print logo
-		print("\n\n_______ _________ ______   _______    ______   _______  _______  _______\n" + 
-		"(  ____ \\__   __/(  __  \ (  ____ \  (  ___ \ (  ____ )(  ___  )(  ____ )\n" +
-		"| (    \/   ) (   | (  \  )| (    \/  | (   ) )| (    )|| (   ) || (    )|\n" +
-		"| (__       | |   | |   ) || (__      | (__/ / | (____)|| |   | || (____)|\n" +
-		"|  __)      | |   | |   | ||  __)     |  __ (  |     __)| |   | ||     __)\n" +
-		"| (         | |   | |   ) || (        | (  \ \ | (\ (   | |   | || (\ (   \n" +
-		"| (____/\___) (___| (__/  )| (____/\  | )___) )| ) \ \__| (___) || ) \ \__\n" +
-		"(_______/\_______/(______/ (_______/  |/ \___/ |/   \__/(_______)|/   \__/\n" +
-		"Ultimate Data Generator 1.9 Flex Edition XP\n" + 
-		"Presented by Google, Microsoft and Uber\n\n")
+		menu_choice = print_menu()
 
-		# Main menu
-		menu_choice = input("\n\nMAIN MENU\n" + 
-							 ".~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
-							 "|\n|-1: Generate new dataset \n" +
-							 "|\n|-2: Subsample existing dataset \n" +
-							 "|\n|-3: Plot existing dataset \n" +
-							 "|\n|-Other: Exit program\n" +
-							 "|\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
-							 ">")
-		menu_choice = ast.literal_eval(menu_choice)
-		
-		if (menu_choice < 1) or (menu_choice > 3):
-			exit()
+		print_logo()
 
 		filename = input("\nEnter target filename --------------------------- \n>")
 		
 		if menu_choice == 3:
+
 			inputs, labels = load_data(filename)
 			plot_classes(inputs,labels)
 			mm_query = input("\nReturn to main menu? Y / N \n>")
 			quit = False if mm_query == "Y" else True
 
 		if menu_choice == 2:
+
 			# Ask for class modifier
 			cm = input(
 				"\nChoose class modifier --------------------------- \n" +
@@ -199,7 +211,6 @@ def main():
 				quit = False if mm_query == "Y" else True
 
 			# Perform sub-sampling
-
 			inputs, labels = subsample(filename,cm)
 			write_array(filename + "_cm" + str(cm) + "_inputs", inputs)
 			write_array(filename + "_cm" + str(cm) + "_labels", labels)
@@ -222,17 +233,17 @@ def main():
 			linear = True if linear == "Y" else False
 
 			if cparams:
-				sA = input("\nEnter sigma for class A (default " + "0.4)\n>" if linear else "0.3)\n>")
+				sA = input("\nEnter sigma for class A (default " + ("0.4)\n>" if linear else "0.3)\n>"))
 				sA = ast.literal_eval(sA)
-				sB = input("\nEnter sigma for class B (default " + "0.4)\n>" if linear else "0.3)\n>")
+				sB = input("\nEnter sigma for class B (default " + ("0.4)\n>" if linear else "0.3)\n>"))
 				sB = ast.literal_eval(sB)
-				mAx = input("\nEnter x coordinate for center of class A (default " + "1.5)\n>" if linear else "1.0)\n>")
+				mAx = input("\nEnter x coordinate for center of class A (default " + ("1.5)\n>" if linear else "1.0)\n>"))
 				mAx = ast.literal_eval(mAx)
-				mAy = input("\nEnter y coordinate for center of class A (default " + "0.5)\n>" if linear else "0.3)\n>")
+				mAy = input("\nEnter y coordinate for center of class A (default " + ("0.5)\n>" if linear else "0.3)\n>"))
 				mAy = ast.literal_eval(mAy)
-				mBx = input("\nEnter x coordinate for center of class B (default " + "-1.5)\n>" if linear else "0.0)\n>")
+				mBx = input("\nEnter x coordinate for center of class B (default " + ("-1.5)\n>" if linear else "0.0)\n>"))
 				mBx = ast.literal_eval(mBx)
-				mBy = input("\nEnter y coordinate for center of class B (default " + "-0.5)\n>" if linear else "0.0)\n>")
+				mBy = input("\nEnter y coordinate for center of class B (default " + ("-0.5)\n>" if linear else "0.0)\n>"))
 				mBy = ast.literal_eval(mBy)
 
 				inputs, labels = generate_binary_data(filename, linear, n_points, sA, sB, mAx, mAy, mBx, mBy)
