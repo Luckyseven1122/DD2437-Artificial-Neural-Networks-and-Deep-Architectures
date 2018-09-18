@@ -8,6 +8,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import math
 
 
+
+
 def generate_binary_data(n_points=50, linear=True, class_modifier=0):
     '''
     class_modifier = 0: no subsampling
@@ -257,8 +259,8 @@ def predict(W, inputs):
 
 def generate_weights(inputs, settings):
     if not settings['he_init']:
-        W = [np.random.normal(0, 0.1, (settings['hidden_nodes'], inputs.shape[0] + 1)),
-            np.random.normal(0, 0.1, (settings['output_dim'], settings['hidden_nodes'] + 1))]
+        W = [np.random.normal(0, 0.001, (settings['hidden_nodes'], inputs.shape[0] + 1)),
+            np.random.normal(0, 0.001, (settings['output_dim'], settings['hidden_nodes'] + 1))]
     else:
         W = [np.random.normal(0, np.sqrt(2 / (inputs.shape[0]+1)), (settings['hidden_nodes'], inputs.shape[0] + 1)),
             np.random.normal(0, np.sqrt(2 / (settings['hidden_nodes'] + 1)), (settings['output_dim'], settings['hidden_nodes'] + 1))]
@@ -297,14 +299,10 @@ def perceptron(training, validation, test, settings):
             _O, _ = forward_pass(W, validation['inputs'])
             print("validation", compute_cost(_O, validation['labels']))
             validation_cost.append(compute_cost(_O, validation['labels']))
-    plot_decision_boundary(inputs, lambda x: predict(W, x))
-    plot_classes(inputs, labels, hidden_nodes=settings['hidden_nodes'])
-    plot_cost(training_cost, validation_cost, settings['epochs'], settings['use_batch'])
 
-    # test
-    if isinstance(test['inputs'], np.ndarray):
-        o, _ = forward_pass(W, test['inputs'])
-        print("Test cost:", compute_cost(o, test['labels']))
+    return W, training_cost, validation_cost
+
+
 plt.ion()
 plt.show()
 
@@ -340,15 +338,26 @@ inputs, labels = load_data(sys.argv[1])
 training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
 
 network_settings = {
-    'epochs'       : 1000,
-    'eta'          : 0.001,
-    'hidden_nodes' : 1,
+    'epochs'       : 10000,
+    'eta'          : 0.01,
+    'hidden_nodes' : 10,
     'output_dim'   : 1,
     'use_batch'    : True,
     'use_momentum' : True,
     'he_init'      : False,
 }
 
-perceptron(training, validation, test, network_settings)
+W, training_cost, validation_cost = perceptron(training, validation, test, network_settings)
+
+
+plot_decision_boundary(inputs, lambda x: predict(W, x))
+plot_classes(inputs, labels, hidden_nodes=network_settings['hidden_nodes'])
+plot_cost(training_cost, validation_cost, network_settings['epochs'], network_settings['use_batch'])
+
+# test
+if isinstance(test['inputs'], np.ndarray):
+    o, _ = forward_pass(W, test['inputs'])
+    print("Test cost:", compute_cost(o, test['labels']))
+
 plt.subplot(2, 2, 1)
 plt.show(block=True)
