@@ -171,20 +171,21 @@ def print_logo():
 
 def print_menu():
 	# Main menu
-	menu_choice = input(bcolors.BOLD + "\nMAIN MENU\n" + bcolors.ENDC + bcolors.MENU +
-						 ".~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.\n" + 
-						 "|                               " + 
-						 "|\n|-1: Generate new dataset       |\n" +
-						 "|                               " + 
-						 "|\n|-2: Subsample existing dataset |\n" +
-						 "|                               " + 
-						 "|\n|-3: Plot existing dataset      |\n" +
-						 "|                               " + 
-						 "|\n|-4: Convert labels             |\n"
-						 "|                               " + 
-						 "|\n|-Other: Exit program           |\n" + 
-						 "|                               |" + 
-						 "\n'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'\n\n" + bcolors.ENDC +
+	space = bcolors.ENDC + "                    " + bcolors.MENU
+	menu_choice = input(space + ".d'._.-\"´`*~MAIN MENU~*´`\"-._.'b.\n" + bcolors.ENDC + bcolors.MENU + space +
+						 ".~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.\n" + space +
+						 "|                               |\n" + space +
+						 "||-1: Generate new dataset      |\n" + space +
+						 "|                               |\n" + space +
+						 "||-2: Subsample existing dataset|\n" + space +
+						 "|                               |\n" + space +
+						 "||-3: Plot existing dataset     |\n" + space +
+						 "|                               |\n" + space +
+						 "||-4: Convert labels            |\n" + space +
+						 "|                               |\n" + space +
+						 "||-Other: Exit program          |\n" + space +
+						 "|                               |\n" + space +
+						 "'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'\n\n" + bcolors.ENDC +
 						 ">")
 
 	menu_choice = check_numeric(menu_choice)
