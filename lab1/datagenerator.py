@@ -134,13 +134,13 @@ def subsample(filename, class_modifier=1):
 
 # Simple plot for generated class
 def plot_classes(inputs, labels):
-    plt.grid(True)
-    plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
-    plt.show()
-    plt.waitforbuttonpress()
+	plt.grid(True)
+	plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
+	plt.show()
+	plt.waitforbuttonpress()
 
 def print_logo():
- 	# Clear terminal window
+	# Clear terminal window
 	os.system('cls' if os.name == 'nt' else 'clear')
 
 	# Print logo
@@ -179,8 +179,16 @@ def return_to_menu():
 	mm_query = check_yes_no(mm_query)
 	return mm_query
 
+def is_float(x):
+	try:
+		float(x)
+	except ValueError:
+		return False
+
+	return True
+
 def check_numeric(x):
-	while not x.isnumeric():
+	while not x.isnumeric() and not is_float(x):
 		x = input(pad("Please specify a numeric value ", True))
 	return ast.literal_eval(x)
 
