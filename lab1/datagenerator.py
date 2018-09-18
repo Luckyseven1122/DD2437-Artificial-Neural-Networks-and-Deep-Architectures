@@ -166,12 +166,22 @@ def print_menu():
 						 "|\n|-Other: Exit program\n" +
 						 "|\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
 						 ">")
+
+	while not menu_choice.isnumeric():
+		menu_choice = input("\n\nPlease specify a number\n>")
+
 	menu_choice = ast.literal_eval(menu_choice)
 	
 	if (menu_choice < 1) or (menu_choice > 4):
 		exit()
 
 	return menu_choice
+
+def return_to_menu():
+	mm_query = input("\nReturn to main menu? Y / N \n>").lower().strip()
+	while mm_query != "y" and mm_query != "n":
+		mm_query = input("\nPlease make your selection. Y / N \n>").lower().strip()
+	return True if mm_query == "y" else False
 
 # ------------------ Command line interface ------------------------------
 
@@ -191,7 +201,11 @@ def main():
 
 		if menu_choice == 4:
 			symmetric = input("\nUse symmetric labels? Y / N \n>")
-			symmetric = True if symmetric == "Y" else False
+
+			while symmetric.lower() != "y" or symmetric.lower() != "n":
+				symmetric = input("\nPlease make your selection - Y / N \n>")
+
+			symmetric = True if symmetric.lower() == "y" else False
 			inputs, labels = load_data(filename)
 
 			if symmetric:
@@ -204,17 +218,11 @@ def main():
 			write_array(filename + "_labels", labels)
 
 			print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
-
-			mm_query = input("\nReturn to main menu? Y / N \n>")
-			quit = False if mm_query == "Y" else True
-
 		
 		if menu_choice == 3:
 
 			inputs, labels = load_data(filename)
 			plot_classes(inputs,labels)
-			mm_query = input("\nReturn to main menu? Y / N \n>")
-			quit = False if mm_query == "Y" else True
 
 		if menu_choice == 2:
 
@@ -224,12 +232,9 @@ def main():
 				"1: remove random 25% from each class \n" +
 				"2: remove 50% from classA (labels = -1) \n" +
 				"3: remove 50% from classB (labels = 1 ) \n" +
-				"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>") 
+				"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>")
+
 			cm = ast.literal_eval(cm)
-			if (cm < 1) or (cm > 4):
-				print("\nInvalid class modifier specified. Exiting.\n")
-				mm_query = input("\nReturn to main menu? Y / N \n>")
-				quit = False if mm_query == "Y" else True
 
 			# Perform sub-sampling
 			inputs, labels = subsample(filename,cm)
@@ -237,9 +242,6 @@ def main():
 			write_array(filename + "_cm" + str(cm) + "_labels", labels)
 			plot_classes(inputs,labels)
 			print("\nData written to " + filename + "_cm" + str(cm) + "_inputs.npy and " + filename + "_cm" + str(cm) + "_labels.npy\n")
-
-			mm_query = input("\nReturn to main menu? Y / N \n>")
-			quit = False if mm_query == "Y" else True
 
 		if menu_choice == 1:
 
@@ -279,8 +281,7 @@ def main():
 
 			print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
 
-			mm_query = input("\nReturn to main menu? Y / N \n>")
-			quit = False if mm_query == "Y" else True
+		quit = not return_to_menu()
 
 
 if __name__ == '__main__':
