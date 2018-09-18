@@ -8,6 +8,25 @@ print("Tensorflow version",tf.VERSION)
     pip3 install -r requirements.txt
 '''
 
+def plot_all(train_pred, valid_pred, test_pred, train, valid, test):
+    t_train = np.arange(0, train.shape[0])
+    t_valid = np.arange(train.shape[0], train.shape[0] + valid.shape[0])
+    t_test = np.arange( train.shape[0] + valid.shape[0],  train.shape[0] + valid.shape[0] + test.shape[0])
+    pred_line_x = train.shape[0] + valid.shape[0]
+    pred_line_y_min = test.min()
+    pred_line_y_max = test.max()
+    #print(t_train.shape, t_valid.shape, t_test.shape)
+    opacity = 0.5
+    plt.figure(figsize=(15,6))
+    plt.plot(t_train, train, 'r', alpha=opacity)
+    plt.plot(t_train, train_pred, 'b')
+    plt.plot(t_valid, valid, 'r', alpha=opacity)
+    plt.plot(t_valid, valid_pred, 'b')
+    plt.plot(t_test, test, 'r', alpha=opacity)
+    plt.plot(t_test, test_pred, '--b')
+    plt.plot([pred_line_x, pred_line_x], [pred_line_y_min, pred_line_y_max], '--k')
+    plt.show()
+
 def plot_time_series(x):
     t = np.arange(0, x.shape[0])
     plt.plot(t, x)
@@ -157,7 +176,8 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
         print('Test:', c_test)
         test_prediction = sess.run(prediction, feed_dict={inputs: test['inputs']})
         training_prediction = sess.run(prediction, feed_dict={inputs: training['inputs']})
-    return cost_training, cost_validation, test_prediction, training_prediction
+        validation_prediction = sess.run(prediction, feed_dict={inputs: validation['inputs']})
+    return cost_training, cost_validation, test_prediction, training_prediction, validation_prediction
 
 '''
 def grid_search(settings):
@@ -194,13 +214,13 @@ network_settings = {
     'layers': [8],
     'inputs_dim': int(training['inputs'].shape[1]),
     'outputs_dim': 1,
-    'beta': 0,
+    'beta': 0.000001,
 }
 
 training_settings = {
-    'epochs': 1000,
-    'eta': 0.001,
-    'patience': 16,
+    'epochs': 10000,
+    'eta': 0.00001,
+    'patience': 4,
     'min_delta': 0.00001
 }
 
@@ -212,11 +232,12 @@ cost = tf.reduce_mean(tf.square(prediction - labels) + tf.square(regularization)
 
 #optimizer = tf.train.AdamOptimizer(learning_rate=training_settings['eta']).minimize(cost)
 optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
-cost_training, cost_validation, test_prediction, training_prediction = train_network(training, validation, test, training_settings, prediction, optimizer, cost)
+cost_training, cost_validation, test_prediction, training_prediction, validation_prediction = train_network(training, validation, test, training_settings, prediction, optimizer, cost)
 
-plot_time_series(mg_time_series)
+#plot_time_series(mg_time_series)
 plot_cost(cost_training, cost_validation)
-plot_prediction(test_prediction, test['labels'])
+#plot_prediction(test_prediction, test['labels'])
 #plot_predicted_vs_real(test_prediction, test['labels'])
 #plot_predicted_vs_real(training_prediction, training['labels'])
 #plot_prediction(training_prediction, training['labels'])
+plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
