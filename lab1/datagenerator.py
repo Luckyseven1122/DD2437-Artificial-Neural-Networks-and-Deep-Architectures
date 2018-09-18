@@ -138,7 +138,8 @@ def subsample(filename, class_modifier=1):
 		xless = xless[:math.floor(x.shape[1]*0.8)]
 		xmore = xmore[:math.floor(x.shape[1]*0.2)]
 		idx = np.concatenate((xless, xmore))
-		x = np.delete(x, idx, axis=1)
+		idx = np.concatenate((idx, np.arange(math.floor(x.shape[1]/2), x.shape[1])))
+		x = x[:,idx]
 
 	inputs, labels = shuffle_data(x)
 	return inputs, labels
