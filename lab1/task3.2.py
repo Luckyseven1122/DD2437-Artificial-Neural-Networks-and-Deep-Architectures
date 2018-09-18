@@ -296,18 +296,22 @@ def perceptron(training, validation, test, settings):
     inputs = training['inputs']
     labels = training['labels']
 
-    if use_batch:
-        batch_size = inputs.shape[1]
-    print(batch_size)
-    asd
     W = generate_weights(inputs, settings)
     W_momentum = [np.zeros(W[0].shape), np.zeros(W[1].shape)]
     for i in range(settings['epochs']):
-        O, H = forward_pass(W, inputs)
-        dO, dH = backward_pass(W, labels, O, H)
-        dW, W_momentum = update_weights(inputs, H, dO, dH, settings['eta'], W_momentum, settings['use_momentum'])
-        W[0] += dW[0]
-        W[1] += dW[1]
+        if settings['use_batch']:
+            O, H = forward_pass(W, inputs)
+            dO, dH = backward_pass(W, labels, O, H)
+            dW, W_momentum = update_weights(inputs, H, dO, dH, settings['eta'], W_momentum, settings['use_momentum'])
+            W[0] += dW[0]
+            W[1] += dW[1]
+        else:
+            for i in range(inputs.shape[1]):
+                O, H = forward_pass(W, inputs[:,i, None])
+                dO, dH = backward_pass(W, labels[:,i,None], O, H)
+                dW, W_momentum = update_weights(inputs[:,i, None], H, dO, dH, settings['eta'], W_momentum, settings['use_momentum'])
+                W[0] += dW[0]
+                W[1] += dW[1]
         print("cost", compute_cost(O, labels))
         training_cost.append(compute_cost(O, labels))
         classification_ratio.append(np.mean(accuracy(W, inputs, labels)))
@@ -353,11 +357,11 @@ def task321():
 
     for node in nodes:
         network_settings = {
-            'epochs'       : 10000,
-            'eta'          : 0.01,
+            'epochs'       : 100,
+            'eta'          : 0.001,
             'hidden_nodes' : node,
             'output_dim'   : 1,
-            'use_batch'    : True,
+            'use_batch'    : False,
             'use_momentum' : True,
             'he_init'      : False,
         }
