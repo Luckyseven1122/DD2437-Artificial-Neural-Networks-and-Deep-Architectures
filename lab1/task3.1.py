@@ -236,6 +236,6 @@ W = generate_weights(inputs)
 use_batch = False
 delta_rule = False
 
-perceptron(inputs, labels, W, 20, 0.001, delta_rule=delta_rule, use_batch=use_batch, use_seq_batch=True)
+perceptron(inputs, labels, W, 50, 0.001, delta_rule=delta_rule, use_batch=use_batch, use_seq_batch=True)
 
 plt.show(block=True)

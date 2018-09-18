@@ -26,7 +26,7 @@ def generate_binary_data(n_points=50, linear=True, class_modifier=0):
         '''
 
         mA = np.array([ 1.5, 0.5])
-        mB = np.array([-1.5, -0.5])
+        mB = np.array([-1.5, 0.5])
         sigmaA = 0.4
         sigmaB = 0.4
 
@@ -151,12 +151,15 @@ def split_data(inputs, labels, test_size, validation_size):
     return training, validation, test
 
 
-def plot_classes(inputs, labels):
+def plot_classes(inputs, labels, hidden_nodes):
     plt.grid(True)
     plt.subplot(2, 2, 1)
     plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
+    title = "Classification with two layer perceptron /w backprop "
+    title += "hidden nodes: " + str(hidden_nodes)
+    plt.title(title, fontsize=14)
     plt.show()
-    plt.waitforbuttonpress()
+    # plt.waitforbuttonpress()
 
 def line(W, x):
     k = -(W.T[0]/W.T[1])
@@ -173,21 +176,21 @@ def draw_line(W):
 
 def plot_cost(training_cost, validation_cost, epochs, use_batch):
     # hold figure until window close
-    plt.waitforbuttonpress()
+    # plt.waitforbuttonpress()
     # plt.clf()
 
     plt.subplot(2, 2, 2)
-    #ylabel = "error (MSE)" if delta_rule else "error (T/F-ratio)"
-    #title += "Gradient ascend w/ batch" if use_batch else "w/o batch"
+    ylabel = "error (MSE)"
+    title = "Error for validation and training set" if use_batch else "w/o batch"
 
     x = np.arange(0, epochs)
     plt.plot(x, training_cost, 'r', label='training cost')
     if validation_cost:
         plt.plot(x, validation_cost, 'g', label='validation cost')
-    #plt.title(title, fontsize=14)
+    plt.title(title, fontsize=14)
     plt.xlabel('epochs', fontsize=12)
     plt.legend()
-    #plt.ylabel(ylabel, fontsize=12)
+    plt.ylabel(ylabel, fontsize=12)
     plt.show()
 
 
@@ -295,7 +298,7 @@ def perceptron(training, validation, test, settings):
             print("validation", compute_cost(_O, validation['labels']))
             validation_cost.append(compute_cost(_O, validation['labels']))
     plot_decision_boundary(inputs, lambda x: predict(W, x))
-    plot_classes(inputs, labels)
+    plot_classes(inputs, labels, hidden_nodes=settings['hidden_nodes'])
     plot_cost(training_cost, validation_cost, settings['epochs'], settings['use_batch'])
 
     # test
@@ -313,7 +316,7 @@ NOTES:
  - not using batch and no delta rule makes model wiggle
 '''
 
-#inputs, labels = generate_binary_data(50, linear=False, class_modifier=4)
+# inputs, labels = generate_binary_data(200, linear=False, class_modifier=1)
 
 
 
@@ -335,14 +338,14 @@ network_settings = {
 }
 '''
 
-#inputs, labels = generate_bell_function()
-inputs, labels = load_data(sys.argv[1])
+inputs, labels = generate_bell_function()
+# inputs, labels = load_data(sys.argv[1])
 training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
 
 network_settings = {
     'epochs'       : 1000,
     'eta'          : 0.01,
-    'hidden_nodes' : 10,
+    'hidden_nodes' : 50,
     'output_dim'   : 1,
     'use_batch'    : True,
     'use_momentum' : True,
