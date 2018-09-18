@@ -263,7 +263,7 @@ def accuracy(W, inputs, labels):
     assert O.shape[1] == L.shape[1]
     ctr = 0
     for i in range(O.shape[1]):
-        if O[:,i] == L[:,i]:
+        if (O[:,i] == L[:,i]).all():
             ctr += 1
     ctr = ctr / O.shape[1]
     return ctr
@@ -294,19 +294,21 @@ def perceptron(training, validation, test, settings):
 
     training_cost = []
     validation_cost = []
-    classification_ratio = []
+    accuracy_list = []
     inputs = training['inputs']
     labels = training['labels']
 
     W = generate_weights(inputs, settings)
     W_momentum = [np.zeros(W[0].shape), np.zeros(W[1].shape)]
     for i in range(settings['epochs']):
+        cost = 0
         if settings['use_batch']:
             O, H = forward_pass(W, inputs)
             dO, dH = backward_pass(W, labels, O, H)
             dW, W_momentum = update_weights(inputs, H, dO, dH, settings['eta'], W_momentum, settings['use_momentum'])
             W[0] += dW[0]
             W[1] += dW[1]
+            cost = compute_cost(O, labels)
         else:
             for i in range(inputs.shape[1]):
                 O, H = forward_pass(W, inputs[:,i, None])
@@ -314,9 +316,11 @@ def perceptron(training, validation, test, settings):
                 dW, W_momentum = update_weights(inputs[:,i, None], H, dO, dH, settings['eta'], W_momentum, settings['use_momentum'])
                 W[0] += dW[0]
                 W[1] += dW[1]
-        print("cost", compute_cost(O, labels))
-        training_cost.append(compute_cost(O, labels))
-        classification_ratio.append(np.mean(accuracy(W, inputs, labels)))
+                cost += compute_cost(O, labels[:,i, None])
+            cost /= inputs.shape[1]
+        print("cost", cost)
+        training_cost.append(cost)
+        accuracy_list.append(np.mean(accuracy(W, inputs, labels)))
         if isinstance(validation['inputs'], np.ndarray):
             _O, _ = forward_pass(W, validation['inputs'])
             print("validation", compute_cost(_O, validation['labels']))
@@ -326,7 +330,7 @@ def perceptron(training, validation, test, settings):
         o, _ = forward_pass(W, test['inputs'])
         print("Test cost:", compute_cost(o, test['labels']))
 
-    return W, training_cost, validation_cost, classification_ratio
+    return W, training_cost, validation_cost, accuracy_list
 
 '''
 HIDDEN NODES TESTING
@@ -359,7 +363,7 @@ def plot_hidden_node_comparison(inputs, labels, nodes, settings, results):
 def task321():
 
     # NOTE: Hidden nodes are mapped as nods = n + 1 i.e 2 => 3, 3 => 4, ...
-    nodes = [8, 11]
+    nodes = [2, 5]
     results = []
     inputs, labels = load_data(sys.argv[1])
     training, validation, test = split_data(inputs, labels, test_size=0.1, validation_size=0.2)
@@ -380,6 +384,57 @@ def task321():
         #plot_cost(training_cost, validation_cost, network_settings['epochs'], network_settings['use_batch'])
     plot_hidden_node_comparison(inputs, labels, nodes, network_settings, results)
 
+def task322():
+    # ENCODER PROBLEM SETUP
+    inputs, labels = generate_encoder_data(2000)
+    training, validation, test = split_data(inputs, labels, test_size=0, validation_size=0)
+
+    #
+    network_settings = {
+        'epochs'       : 800,
+        'eta'          : 0.001,
+        'hidden_nodes' : 3,
+        'output_dim'   : 8,
+        'use_batch'    : True,
+        'use_momentum' : True,
+        'he_init'      : True,
+    }
+
+    W, training_cost, validation_cost, accuracy = perceptron(training, validation, test, network_settings)
+
+    x = np.arange(0, network_settings['epochs'])
+    fig, ax1 = plt.subplots()
+    ax1.plot(x, accuracy, 'b')
+    ax1.set_xlabel('Epochs')
+    # Make the y-axis label, ticks and tick labels match the line color.
+    ax1.set_ylabel('Accuracy', color='b')
+    ax1.tick_params('y', colors='b')
+
+    ax2 = ax1.twinx()
+    ax2.plot(x, training_cost, 'r', alpha=0.3)
+    ax2.set_ylabel('Training MSE', color='r')
+    ax2.tick_params('y', colors='r')
+    plt.show()
+
+def task323():
+    inputs, labels = generate_bell_function()
+    #inputs, labels = load_data(sys.argv[1])
+    training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
+
+    network_settings = {
+        'epochs'       : 10000,
+        'eta'          : 0.01,
+        'hidden_nodes' : 10,
+        'output_dim'   : 1,
+        'use_batch'    : True,
+        'use_momentum' : True,
+        'he_init'      : False,
+    }
+
+    W, training_cost, validation_cost, accuracy = perceptron(training, validation, test, network_settings)
+
+
+
 plt.ion()
 plt.show()
 
@@ -391,50 +446,11 @@ NOTES:
  - not using batch and no delta rule makes model wiggle
 '''
 
-# inputs, labels = generate_binary_data(200, linear=False, class_modifier=1)
-
-'''
-# ENCODER PROBLEM SETUP
-inputs, labels = generate_encoder_data(2000)
-training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.4)
-
-#
-network_settings = {
-    'epochs'       : 2000,
-    'eta'          : 0.001,
-    'hidden_nodes' : 3,
-    'output_dim'   : 8,
-    'use_batch'    : True,
-    'use_momentum' : True,
-    'he_init'      : True,
-}
-'''
-'''
-# inputs, labels = generate_bell_function()
-inputs, labels = load_data(sys.argv[1])
-training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
-
-network_settings = {
-    'epochs'       : 10000,
-    'eta'          : 0.01,
-    'hidden_nodes' : 10,
-    'output_dim'   : 1,
-    'use_batch'    : True,
-    'use_momentum' : True,
-    'he_init'      : False,
-}
-
-W, training_cost, validation_cost, _ = perceptron(training, validation, test, network_settings)
 
 
-plot_decision_boundary(inputs, lambda x: predict(W, x))
-plot_classes(inputs, labels, hidden_nodes=network_settings['hidden_nodes'])
-plot_cost(training_cost, validation_cost, network_settings['epochs'], network_settings['use_batch'])
-
-# test
 
 
-'''
-task321()
-plt.subplot(2, 2, 1)
+#task321()
+#task322()
+task323()
 plt.show(block=True)
