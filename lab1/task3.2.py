@@ -296,6 +296,10 @@ def perceptron(training, validation, test, settings):
     inputs = training['inputs']
     labels = training['labels']
 
+    if use_batch:
+        batch_size = inputs.shape[1]
+    print(batch_size)
+    asd
     W = generate_weights(inputs, settings)
     W_momentum = [np.zeros(W[0].shape), np.zeros(W[1].shape)]
     for i in range(settings['epochs']):
