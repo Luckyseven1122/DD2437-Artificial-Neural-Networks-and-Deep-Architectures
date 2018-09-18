@@ -12,6 +12,17 @@ from iohandler import read_array
 from iohandler import load_data
 
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
 '''
 	Generate a full data set from scratch stored as 
 		- [filename]_raw.npy 	
@@ -144,20 +155,20 @@ def print_logo():
 	os.system('cls' if os.name == 'nt' else 'clear')
 
 	# Print logo
-	print("\n\n_______ _________ ______   _______    ______   _______  _______  _______\n" + 
+	print(bcolors.HEADER + bcolors.BOLD + "\n\n_______ _________ ______   _______    ______   _______  _______  _______\n" + 
 	"(  ____ \\__   __/(  __  \ (  ____ \  (  ___ \ (  ____ )(  ___  )(  ____ )\n" +
 	"| (    \/   ) (   | (  \  )| (    \/  | (   ) )| (    )|| (   ) || (    )|\n" +
 	"| (__       | |   | |   ) || (__      | (__/ / | (____)|| |   | || (____)|\n" +
 	"|  __)      | |   | |   | ||  __)     |  __ (  |     __)| |   | ||     __)\n" +
 	"| (         | |   | |   ) || (        | (  \ \ | (\ (   | |   | || (\ (   \n" +
 	"| (____/\___) (___| (__/  )| (____/\  | )___) )| ) \ \__| (___) || ) \ \__\n" +
-	"(_______/\_______/(______/ (_______/  |/ \___/ |/   \__/(_______)|/   \__/\n" +
+	"(_______/\_______/(______/ (_______/  |/ \___/ |/   \__/(_______)|/   \__/\n" + bcolors.UNDERLINE +
 	"Ultimate Data Generator 1.9 Flex Edition XP\n" + 
-	"Presented by Google, Microsoft and Uber\n\n")
+	"Presented by Google, Microsoft and Uber\n\n" + bcolors.ENDC)
 
 def print_menu():
 	# Main menu
-	menu_choice = input("\nMAIN MENU\n" + 
+	menu_choice = input(bcolors.BOLD + "\nMAIN MENU\n" + bcolors.ENDC +
 						 ".~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
 						 "|\n|-1: Generate new dataset \n" +
 						 "|\n|-2: Subsample existing dataset \n" +
