@@ -220,8 +220,7 @@ def main():
 		if menu_choice == 4:
 			inputs, labels = load_data(filename)
 
-			symmetric = input(pad("Use symmetric labels? Y / N ", True))
-			symmetric = check_yes_no(symmetric)
+			symmetric = check_yes_no(input(pad("Use symmetric labels? Y / N ", True)))
 
 			if symmetric:
 				labels = np.where(labels == 0, -1, labels)
@@ -242,18 +241,15 @@ def main():
 		if menu_choice == 2:
 
 			# Ask for class modifier
-			cm = input(
+			cm = check_numeric(input(
 				pad("Choose class modifier ", False) +
 				"1: remove random 25% from each class \n" +
 				"2: remove 50% from classA (labels = -1) \n" +
 				"3: remove 50% from classB (labels = 1 ) \n" +
-				"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>")
-
-			cm = check_numeric(cm)
+				"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>"))
 
 			while cm < 1 or cm > 4:
-				cm = input(pad("Please enter a value between 1 and 4 ", True))	
-				cm = check_numeric(cm)
+				cm = check_numeric(input(pad("Please enter a value between 1 and 4 ", True)))
 
 			# Perform sub-sampling
 			inputs, labels = subsample(filename,cm)
@@ -265,28 +261,19 @@ def main():
 		if menu_choice == 1:
 
 			# Ask for relevant parameters
-			n_points = input(pad("Enter number of data points per class ", True)) 
-			n_points = check_numeric(n_points)
+			n_points = check_numeric(input(pad("Enter number of data points per class ", True)))
 
-			cparams = input(pad("Set custom parameters for each class? Y / N ", True))
-			cparams = check_yes_no(cparams)
+			cparams = check_yes_no(input(pad("Set custom parameters for each class? Y / N ", True)))
 
-			linear = input(pad("Use linear formula for data generation? Y / N ", True))
-			linear = check_yes_no(linear)
+			linear = check_yes_no(input(pad("Use linear formula for data generation? Y / N ", True)))
 
 			if cparams:
-				sA = input(pad("Enter sigma for class A (default " + ("0.4) " if linear else "0.3) "), True))
-				sA = check_numeric(sA)
-				sB = input(pad("Enter sigma for class B (default " + ("0.4) " if linear else "0.3) "), True))
-				sB = check_numeric(sB)
-				mAx = input(pad("Enter x coordinate for center of class A (default " + ("1.5) " if linear else "1.0) "), True))
-				mAx = check_numeric(mAx)
-				mAy = input(pad("Enter y coordinate for center of class A (default " + ("0.5) " if linear else "0.3) "), True))
-				mAy = check_numeric(mAy)
-				mBx = input(pad("Enter x coordinate for center of class B (default " + ("-1.5) " if linear else "0.0)\ "), True))
-				mBx = check_numeric(mBx)
-				mBy = input(pad("Enter y coordinate for center of class B (default " + ("-0.5) " if linear else "0.0) "), True))
-				mBy = check_numeric(mBy)
+				sA = check_numeric(input(pad("Enter sigma for class A (default " + ("0.4) " if linear else "0.3) "), True)))
+				sB = check_numeric(input(pad("Enter sigma for class B (default " + ("0.4) " if linear else "0.3) "), True)))
+				mAx = check_numeric(input(pad("Enter x coordinate for center of class A (default " + ("1.5) " if linear else "1.0) "), True)))
+				mAy = check_numeric(input(pad("Enter y coordinate for center of class A (default " + ("0.5) " if linear else "0.3) "), True)))
+				mBx = check_numeric(input(pad("Enter x coordinate for center of class B (default " + ("-1.5) " if linear else "0.0)\ "), True)))
+				mBy = check_numeric(input(pad("Enter y coordinate for center of class B (default " + ("-0.5) " if linear else "0.0) "), True)))
 
 				inputs, labels = generate_binary_data(filename, linear, n_points, sA, sB, mAx, mAy, mBx, mBy)
 				write_array(filename + "_inputs", inputs)
