@@ -2,11 +2,16 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 print("Tensorflow version",tf.VERSION)
+from decimal import *
 
 '''
     INSTALL TENSORFLOW:
     pip3 install -r requirements.txt
 '''
+
+def save_fig(path):
+    plt.savefig('./figures/part2/' + path)
+
 
 def plot_all(train_pred, valid_pred, test_pred, train, valid, test):
     t_train = np.arange(0, train.shape[0])
@@ -79,7 +84,7 @@ def mg_time_series(t_stop):
     return np.asarray(x)
 
 
-def generate_data(t_start, t_stop, validation_percentage):
+def generate_data(t_start, t_stop, validation_percentage, std):
     t = np.arange(t_start, t_stop)
     x = mg_time_series(t_stop + 5) # add 5 for labels
 
@@ -165,7 +170,7 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
             print("Success!")
         except:
             print("Error. Storing current weights.")
-            saver.save(sess, settings['weights_path'])
+            saver.save(sess=sess, save_path=settings['weights_path'])
 
         for e in range(settings['epochs']):
             _, c_train = sess.run([optimizer, cost], feed_dict={inputs: training['inputs'], labels: training['labels']})
@@ -192,7 +197,8 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
     return cost_training, cost_validation, test_prediction, training_prediction, validation_prediction
 
 
-training, validation, test, mg_time_series = generate_data(300, 1500, 0.3)
+
+training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0.03)
 
 
 network_settings = {
@@ -203,16 +209,21 @@ network_settings = {
     'beta': 0.000001,
 }
 
+layer_path_name = ''
+for l in network_settings['layers']:
+    layer_path_name += str(l)
+
 training_settings = {
-    'epochs': 10000,
+    'epochs': 3,
     'eta': 0.00001,
-    'patience': 4,
-    'min_delta': 0.00001,
-    'weights_path': './weights/in=' + str(network_settings['inputs_dim']) + '_' + \
-                    'layers=' + str(network_settings['inputs_dim']) + '_' + \
-                    'out=' + str(network_settings['outputs_dim']) + '_' + \
-                    'beta=' + str(network_settings['beta']) + '/weights.ckpt'
+    'patience': 8,
+    'min_delta': 0.0001,
+    'weights_path': './tmp/' + str(network_settings['inputs_dim']) + \
+                                       layer_path_name + \
+                                       str(network_settings['outputs_dim']) + '_' + \
+                                       str(network_settings['beta']) + '/data.ckpt'
 }
+
 
 
 inputs = tf.placeholder('float')
@@ -227,8 +238,10 @@ cost_training, cost_validation, test_prediction, training_prediction, validation
 
 #plot_time_series(mg_time_series)
 plot_cost(cost_training, cost_validation)
-#plot_prediction(test_prediction, test['labels'])
-#plot_predicted_vs_real(test_prediction, test['labels'])
-#plot_predicted_vs_real(training_prediction, training['labels'])
+plot_prediction(test_prediction, test['labels'])
 #plot_prediction(training_prediction, training['labels'])
 plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
+
+'''
+
+'''
