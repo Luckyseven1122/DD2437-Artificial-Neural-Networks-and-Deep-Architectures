@@ -167,10 +167,7 @@ def print_menu():
 						 "|\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
 						 ">")
 
-	while not menu_choice.isnumeric():
-		menu_choice = input("\n\nPlease specify a number\n>")
-
-	menu_choice = ast.literal_eval(menu_choice)
+	menu_choice = check_numeric(menu_choice)
 	
 	if (menu_choice < 1) or (menu_choice > 4):
 		exit()
@@ -178,19 +175,22 @@ def print_menu():
 	return menu_choice
 
 def return_to_menu():
-	mm_query = input("\nReturn to main menu? Y / N \n>").lower().strip()
+	mm_query = input(pad("Return to main menu? Y / N ", True)).lower().strip()
 	mm_query = check_yes_no(mm_query)
 	return mm_query
 
 def check_numeric(x):
 	while not x.isnumeric():
-		x = input("\nPlease specify a numeric value\n>")
+		x = input(pad("Please specify a numeric value ", True))
 	return ast.literal_eval(x)
 
 def check_yes_no(x):
 	while x.lower().strip() != "y" and x.lower().strip() != "n":
-		x = input("\nPlease make your selection: Y / N\n>")
+		x = input(pad("Please make your selection: Y / N ", True))
 	return True if x.lower().strip() == "y" else False
+
+def pad(x, prompt):
+	return "\n" + x.ljust(60, "-") + "._\n" + (">" if prompt else "")
 
 
 # ------------------ Command line interface ------------------------------
@@ -207,12 +207,12 @@ def main():
 
 		print_logo()
 
-		filename = input("\nEnter target filename --------------------------- \n>")
+		filename = input(pad("Enter target filename ", True))
 
 		if menu_choice == 4:
 			inputs, labels = load_data(filename)
 
-			symmetric = input("\nUse symmetric labels? Y / N \n>")
+			symmetric = input(pad("Use symmetric labels? Y / N ", True))
 			symmetric = check_yes_no(symmetric)
 
 			if symmetric:
@@ -235,7 +235,7 @@ def main():
 
 			# Ask for class modifier
 			cm = input(
-				"\nChoose class modifier --------------------------- \n" +
+				pad("Choose class modifier ", False) +
 				"1: remove random 25% from each class \n" +
 				"2: remove 50% from classA (labels = -1) \n" +
 				"3: remove 50% from classB (labels = 1 ) \n" +
@@ -244,7 +244,7 @@ def main():
 			cm = check_numeric(cm)
 
 			while cm < 1 or cm > 4:
-				cm = input("\nPlease enter a value between 1 and 4\n>")	
+				cm = input(pad("Please enter a value between 1 and 4 ", True))	
 				cm = check_numeric(cm)
 
 			# Perform sub-sampling
@@ -257,27 +257,27 @@ def main():
 		if menu_choice == 1:
 
 			# Ask for relevant parameters
-			n_points = input("\nEnter number of data points per class ----------- \n>") 
+			n_points = input(pad("Enter number of data points per class ", True)) 
 			n_points = check_numeric(n_points)
 
-			cparams = input("\nSet custom parameters for each class? Y / N ----- \n>")
+			cparams = input(pad("Set custom parameters for each class? Y / N ", True))
 			cparams = check_yes_no(cparams)
 
-			linear = input("\nUse linear formula for data generation? Y / N --- \n>")
+			linear = input(pad("Use linear formula for data generation? Y / N ", True))
 			linear = check_yes_no(linear)
 
 			if cparams:
-				sA = input("\nEnter sigma for class A (default " + ("0.4)\n>" if linear else "0.3)\n>"))
+				sA = input(pad("Enter sigma for class A (default " + ("0.4) " if linear else "0.3) "), True))
 				sA = check_numeric(sA)
-				sB = input("\nEnter sigma for class B (default " + ("0.4)\n>" if linear else "0.3)\n>"))
+				sB = input(pad("Enter sigma for class B (default " + ("0.4) " if linear else "0.3) "), True))
 				sB = check_numeric(sB)
-				mAx = input("\nEnter x coordinate for center of class A (default " + ("1.5)\n>" if linear else "1.0)\n>"))
+				mAx = input(pad("Enter x coordinate for center of class A (default " + ("1.5) " if linear else "1.0) "), True))
 				mAx = check_numeric(mAx)
-				mAy = input("\nEnter y coordinate for center of class A (default " + ("0.5)\n>" if linear else "0.3)\n>"))
+				mAy = input(pad("Enter y coordinate for center of class A (default " + ("0.5) " if linear else "0.3) "), True))
 				mAy = check_numeric(mAy)
-				mBx = input("\nEnter x coordinate for center of class B (default " + ("-1.5)\n>" if linear else "0.0)\n>"))
+				mBx = input(pad("Enter x coordinate for center of class B (default " + ("-1.5) " if linear else "0.0)\ "), True))
 				mBx = check_numeric(mBx)
-				mBy = input("\nEnter y coordinate for center of class B (default " + ("-0.5)\n>" if linear else "0.0)\n>"))
+				mBy = input(pad("Enter y coordinate for center of class B (default " + ("-0.5) " if linear else "0.0) "), True))
 				mBy = check_numeric(mBy)
 
 				inputs, labels = generate_binary_data(filename, linear, n_points, sA, sB, mAx, mAy, mBx, mBy)
