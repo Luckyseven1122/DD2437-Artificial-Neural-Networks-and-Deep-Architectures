@@ -273,6 +273,7 @@ def generate_weights(inputs, settings):
         W = [np.random.normal(0, 0.001, (settings['hidden_nodes'], inputs.shape[0] + 1)),
             np.random.normal(0, 0.001, (settings['output_dim'], settings['hidden_nodes'] + 1))]
     else:
+        # https://www.tensorflow.org/api_docs/python/tf/keras/initializers/he_normal
         W = [np.random.normal(0, np.sqrt(2 / (inputs.shape[0]+1)), (settings['hidden_nodes'], inputs.shape[0] + 1)),
             np.random.normal(0, np.sqrt(2 / (settings['hidden_nodes'] + 1)), (settings['output_dim'], settings['hidden_nodes'] + 1))]
     return W
@@ -336,17 +337,21 @@ def plot_hidden_node_comparison(inputs, labels, nodes, settings, results):
     for i, n in enumerate(nodes):
         plt.plot(np.arange(0, len(results[i]['Cost'])), results[i]['Cost'], label='{} nodes'.format(n))
         plt.legend()
+        plt.xlabel('epochs')
+        plt.ylabel('MSE')
 
     plt.subplot(2, 2, 2)
     for i, n in enumerate(nodes):
         plt.plot(np.arange(0, len(results[i]['Missclassification'])), results[i]['Missclassification'], label='{} nodes'.format(n))
         plt.legend()
+        plt.xlabel('epochs')
+        plt.ylabel('Accuracy')
 
     for i, r in enumerate(results):
         plt.subplot(2,2,i+3)
         plot_decision_boundary(inputs, lambda x: predict(results[i]['W'], x))
         plot_classes(inputs, labels, hidden_nodes=nodes[i])
-        plt.title('{} hidden nodes'.format(str(nodes[i])))
+        plt.title('{} hidden nodes'.format(str(nodes[i]+1)))
 
     plt.show()
 
@@ -354,7 +359,7 @@ def plot_hidden_node_comparison(inputs, labels, nodes, settings, results):
 def task321():
 
     # NOTE: Hidden nodes are mapped as nods = n + 1 i.e 2 => 3, 3 => 4, ...
-    nodes = [2, 5]
+    nodes = [8, 11]
     results = []
     inputs, labels = load_data(sys.argv[1])
     training, validation, test = split_data(inputs, labels, test_size=0.1, validation_size=0.2)
