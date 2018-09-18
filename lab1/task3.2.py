@@ -415,6 +415,26 @@ def task322():
     ax2.set_ylabel('Training MSE', color='r')
     ax2.tick_params('y', colors='r')
     plt.show()
+
+def task323():
+    inputs, labels = generate_bell_function()
+    #inputs, labels = load_data(sys.argv[1])
+    training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
+
+    network_settings = {
+        'epochs'       : 10000,
+        'eta'          : 0.01,
+        'hidden_nodes' : 10,
+        'output_dim'   : 1,
+        'use_batch'    : True,
+        'use_momentum' : True,
+        'he_init'      : False,
+    }
+
+    W, training_cost, validation_cost, accuracy = perceptron(training, validation, test, network_settings)
+
+
+
 plt.ion()
 plt.show()
 
@@ -426,36 +446,11 @@ NOTES:
  - not using batch and no delta rule makes model wiggle
 '''
 
-# inputs, labels = generate_binary_data(200, linear=False, class_modifier=1)
 
 
 
-'''
-# inputs, labels = generate_bell_function()
-inputs, labels = load_data(sys.argv[1])
-training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
 
-network_settings = {
-    'epochs'       : 10000,
-    'eta'          : 0.01,
-    'hidden_nodes' : 10,
-    'output_dim'   : 1,
-    'use_batch'    : True,
-    'use_momentum' : True,
-    'he_init'      : False,
-}
-
-W, training_cost, validation_cost, _ = perceptron(training, validation, test, network_settings)
-
-
-plot_decision_boundary(inputs, lambda x: predict(W, x))
-plot_classes(inputs, labels, hidden_nodes=network_settings['hidden_nodes'])
-plot_cost(training_cost, validation_cost, network_settings['epochs'], network_settings['use_batch'])
-
-# test
-
-
-'''
 #task321()
-task322()
+#task322()
+task323()
 plt.show(block=True)
