@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib
 # matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import sys
 from iohandler import load_data
 from mpl_toolkits.mplot3d import Axes3D
@@ -118,14 +119,7 @@ def generate_bell_function():
     inputs = np.vstack((np.reshape(xx, (1, n_points)), np.reshape(yy, (1, n_points))))
     labels = np.reshape(z, (1, n_points))
 
-    #fig = plt.figure()
-    #ax = fig.add_subplot(1,1,1, projection='3d')
-    #ax.plot_surface(xx,yy,z)
-    #ax.set_xlabel('X axis')
-    #ax.set_ylabel('Y axis')
-    #ax.set_zlabel('Z axis')
-    #plt.show()
-    return inputs, labels
+    return inputs, labels, x, y
 
 def split_data(inputs, labels, test_size, validation_size):
 
@@ -318,6 +312,8 @@ def perceptron(training, validation, test, settings):
                 W[1] += dW[1]
                 cost += compute_cost(O, labels[:,i, None])
             cost /= inputs.shape[1]
+        if settings['use_bell_plot']:
+            plot_bell_learning(settings['bell_cords'], O)
         print("cost", cost)
         training_cost.append(cost)
         accuracy_list.append(np.mean(accuracy(W, inputs, labels)))
@@ -416,23 +412,47 @@ def task322():
     ax2.tick_params('y', colors='r')
     plt.show()
 
-def task323():
-    inputs, labels = generate_bell_function()
+def plot_learning_bell_curve(xx, yy, z):
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1, projection='3d')
+    ax.plot_surface(xx,yy,z)
+    ax.set_xlabel('X axis')
+    ax.set_ylabel('Y axis')
+    ax.set_zlabel('Z axis')
+    plt.show()
+    plt.waitforbuttonpress()
+
+def plot_bell_learning(bell_cords, output):
+    grid_size = output.shape[1]
+    h = 0.5
+    xx, yy = np.meshgrid(np.arange(-5, 5, 0.5), np.arange(-5, 5, 0.5))
+    zz = output.reshape(xx.shape)
+
+    #plot.axis([-5 5 -5 5 -0.7 0.7])
+    plt.contourf(xx, yy, zz, cmap=plt.cm.Spectral)
+    plt.show()
+    plt.pause(0.001)
+
+def task332():
+    inputs, labels, x, y = generate_bell_function()
     #inputs, labels = load_data(sys.argv[1])
-    training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
+    training, validation, test = split_data(inputs, labels, test_size=0, validation_size=0)
 
     network_settings = {
-        'epochs'       : 10000,
+        'epochs'       : 1000,
         'eta'          : 0.01,
         'hidden_nodes' : 10,
         'output_dim'   : 1,
         'use_batch'    : True,
         'use_momentum' : True,
-        'he_init'      : False,
+        'he_init'      : True,
+        'use_bell_plot': True,
+        'bell_cords' : [x, y]
     }
 
     W, training_cost, validation_cost, accuracy = perceptron(training, validation, test, network_settings)
-
+    plt.waitforbuttonpress()
+    #plot_cost(training_cost, validation_cost, network_settings['epochs'], False)
 
 
 plt.ion()
@@ -452,5 +472,5 @@ NOTES:
 
 #task321()
 #task322()
-task323()
+task332()
 plt.show(block=True)

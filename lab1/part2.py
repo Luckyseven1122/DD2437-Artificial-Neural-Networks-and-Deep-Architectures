@@ -152,9 +152,21 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
     assert settings['min_delta'] > 0
     print('Training starts')
 
+    saver = tf.train.Saver()
+
     patience_counter = 0
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
+
+        # Try loading weights
+        try:
+            print("Trying to load weights:",settings['weights_path'])
+            saver.restore(sess=sess, save_path=settings['weights_path']) #"/tmp/model.ckpt"
+            print("Success!")
+        except:
+            print("Error. Storing current weights.")
+            saver.save(sess, settings['weights_path'])
+
         for e in range(settings['epochs']):
             _, c_train = sess.run([optimizer, cost], feed_dict={inputs: training['inputs'], labels: training['labels']})
             c_valid = sess.run(cost, feed_dict={inputs: validation['inputs'], labels: validation['labels']})
@@ -179,35 +191,9 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
         validation_prediction = sess.run(prediction, feed_dict={inputs: validation['inputs']})
     return cost_training, cost_validation, test_prediction, training_prediction, validation_prediction
 
-'''
-def grid_search(settings):
-
-    n_grid_points = settings['learning_rate'].shape[0] * settings['regularization'].shape[0] * len(settings['patience'])
-
-    print('Starting grid search..')
-
-    for lr in settings['learning_rate']:
-        for reg in settings['regularization']:
-            for pat in settings['patience']:
-                print("test")
-'''
-
-'''
-EXECUTION STARTS HERE
-'''
 
 training, validation, test, mg_time_series = generate_data(300, 1500, 0.3)
 
-'''
-grid_settings = {
-    'learning_rate': np.arange(0.0001, 0.1, 0.0001),
-    'regularization': np.arange(0.001, 0.1, 0.01),
-    'layer_config'
-    'patience': [2,4,8]
-}
-
-#grid_search(grid_settings)
-'''
 
 network_settings = {
     # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
@@ -221,8 +207,13 @@ training_settings = {
     'epochs': 10000,
     'eta': 0.00001,
     'patience': 4,
-    'min_delta': 0.00001
+    'min_delta': 0.00001,
+    'weights_path': './weights/in=' + str(network_settings['inputs_dim']) + '_' + \
+                    'layers=' + str(network_settings['inputs_dim']) + '_' + \
+                    'out=' + str(network_settings['outputs_dim']) + '_' + \
+                    'beta=' + str(network_settings['beta']) + '/weights.ckpt'
 }
+
 
 inputs = tf.placeholder('float')
 labels = tf.placeholder('float')
