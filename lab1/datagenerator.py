@@ -13,7 +13,9 @@ from iohandler import load_data
 
 
 class bcolors:
-    HEADER = '\033[95m'
+    HEADER = '\033[2;2;95m'
+    LOGO = '\033[0;0;101m'
+    MENU = '\033[2;0;106m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
     WARNING = '\033[93m'
@@ -156,32 +158,39 @@ def print_logo():
 	os.system('cls' if os.name == 'nt' else 'clear')
 
 	# Print logo
-	print(bcolors.HEADER + bcolors.BOLD + "\n\n_______ _________ ______   _______    ______   _______  _______  _______\n" + 
-	"(  ____ \\__   __/(  __  \ (  ____ \  (  ___ \ (  ____ )(  ___  )(  ____ )\n" +
+	print(bcolors.LOGO + bcolors.BOLD + "\n\n_______ _________ ______   _______    ______   _______  _______  _______  \n" + 
+	"(  ____ \\__   __/(  __  \ (  ____ \  (  ___ \ (  ____ )(  ___  )(  ____ ) \n" +
 	"| (    \/   ) (   | (  \  )| (    \/  | (   ) )| (    )|| (   ) || (    )|\n" +
 	"| (__       | |   | |   ) || (__      | (__/ / | (____)|| |   | || (____)|\n" +
 	"|  __)      | |   | |   | ||  __)     |  __ (  |     __)| |   | ||     __)\n" +
 	"| (         | |   | |   ) || (        | (  \ \ | (\ (   | |   | || (\ (   \n" +
 	"| (____/\___) (___| (__/  )| (____/\  | )___) )| ) \ \__| (___) || ) \ \__\n" +
-	"(_______/\_______/(______/ (_______/  |/ \___/ |/   \__/(_______)|/   \__/\n" + bcolors.UNDERLINE +
+	"(_______/\_______/(______/ (_______/  |/ \___/ |/   \__/(_______)|/   \__/\n" + bcolors.ENDC + "" + bcolors.UNDERLINE +
 	"Ultimate Data Generator 1.9 Flex Edition XP\n" + 
 	"Presented by Google, Microsoft and Uber\n\n" + bcolors.ENDC)
 
 def print_menu():
 	# Main menu
-	menu_choice = input(bcolors.BOLD + "\nMAIN MENU\n" + bcolors.ENDC +
-						 ".~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
-						 "|\n|-1: Generate new dataset \n" +
-						 "|\n|-2: Subsample existing dataset \n" +
-						 "|\n|-3: Plot existing dataset \n" +
-						 "|\n|-4: Set symmetric / asymmetric labels \n"
-						 "|\n|-Other: Exit program\n" +
-						 "|\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
+	menu_choice = input(bcolors.BOLD + "\nMAIN MENU\n" + bcolors.ENDC + bcolors.MENU +
+						 ".~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.\n" + 
+						 "|                               " + 
+						 "|\n|-1: Generate new dataset       |\n" +
+						 "|                               " + 
+						 "|\n|-2: Subsample existing dataset |\n" +
+						 "|                               " + 
+						 "|\n|-3: Plot existing dataset      |\n" +
+						 "|                               " + 
+						 "|\n|-4: Convert labels             |\n"
+						 "|                               " + 
+						 "|\n|-Other: Exit program           |\n" + 
+						 "|                               |" + 
+						 "\n'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'\n\n" + bcolors.ENDC +
 						 ">")
 
 	menu_choice = check_numeric(menu_choice)
 	
 	if (menu_choice < 1) or (menu_choice > 4):
+		print("\n\n")
 		exit()
 
 	return menu_choice
@@ -196,7 +205,6 @@ def is_float(x):
 		float(x)
 	except ValueError:
 		return False
-
 	return True
 
 def check_numeric(x):
@@ -210,7 +218,7 @@ def check_yes_no(x):
 	return True if x.lower().strip() == "y" else False
 
 def pad(x, prompt):
-	return "\n" + x.ljust(60, "-") + "._\n" + (">" if prompt else "")
+	return "\n*- " + x.ljust(60, "-") + "._\n" + (">" if prompt else "")
 
 
 # ------------------ Command line interface ------------------------------
@@ -230,6 +238,7 @@ def main():
 		filename = input(pad("Enter target filename ", True))
 
 		if menu_choice == 4:
+
 			inputs, labels = load_data(filename)
 
 			symmetric = check_yes_no(input(pad("Use symmetric labels? Y / N ", True)))
@@ -301,6 +310,7 @@ def main():
 
 		quit = not return_to_menu()
 
+	print("\n\n")
 
 if __name__ == '__main__':
 		main()
