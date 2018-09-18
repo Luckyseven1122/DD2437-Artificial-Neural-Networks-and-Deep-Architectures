@@ -335,14 +335,14 @@ HIDDEN NODES TESTING
 def plot_hidden_node_comparison(inputs, labels, nodes, settings, results):
     plt.subplot(2, 2, 1)
     for i, n in enumerate(nodes):
-        plt.plot(np.arange(0, len(results[i]['Cost'])), results[i]['Cost'], label='{} nodes'.format(n))
+        plt.plot(np.arange(0, len(results[i]['Cost'])), results[i]['Cost'], label='{} nodes'.format(n+1))
         plt.legend()
         plt.xlabel('epochs')
         plt.ylabel('MSE')
 
     plt.subplot(2, 2, 2)
     for i, n in enumerate(nodes):
-        plt.plot(np.arange(0, len(results[i]['Missclassification'])), results[i]['Missclassification'], label='{} nodes'.format(n))
+        plt.plot(np.arange(0, len(results[i]['Missclassification'])), results[i]['Missclassification'], label='{} nodes'.format(n+1))
         plt.legend()
         plt.xlabel('epochs')
         plt.ylabel('Accuracy')
