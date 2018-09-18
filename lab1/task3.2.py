@@ -318,9 +318,6 @@ NOTES:
 
 # inputs, labels = generate_binary_data(200, linear=False, class_modifier=1)
 
-
-
-
 '''
 # ENCODER PROBLEM SETUP
 inputs, labels = generate_encoder_data(2000)
@@ -338,14 +335,14 @@ network_settings = {
 }
 '''
 
-inputs, labels = generate_bell_function()
-# inputs, labels = load_data(sys.argv[1])
+# inputs, labels = generate_bell_function()
+inputs, labels = load_data(sys.argv[1])
 training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
 
 network_settings = {
     'epochs'       : 1000,
-    'eta'          : 0.01,
-    'hidden_nodes' : 50,
+    'eta'          : 0.001,
+    'hidden_nodes' : 1,
     'output_dim'   : 1,
     'use_batch'    : True,
     'use_momentum' : True,
