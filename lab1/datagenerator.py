@@ -179,9 +179,19 @@ def print_menu():
 
 def return_to_menu():
 	mm_query = input("\nReturn to main menu? Y / N \n>").lower().strip()
-	while mm_query != "y" and mm_query != "n":
-		mm_query = input("\nPlease make your selection. Y / N \n>").lower().strip()
-	return True if mm_query == "y" else False
+	mm_query = check_yes_no(mm_query)
+	return mm_query
+
+def check_numeric(x):
+	while not x.isnumeric():
+		x = input("\nPlease specify a numeric value\n>")
+	return ast.literal_eval(x)
+
+def check_yes_no(x):
+	while x.lower().strip() != "y" and x.lower().strip() != "n":
+		x = input("\nPlease make your selection: Y / N\n>")
+	return True if x.lower().strip() == "y" else False
+
 
 # ------------------ Command line interface ------------------------------
 
@@ -200,13 +210,10 @@ def main():
 		filename = input("\nEnter target filename --------------------------- \n>")
 
 		if menu_choice == 4:
-			symmetric = input("\nUse symmetric labels? Y / N \n>")
-
-			while symmetric.lower() != "y" or symmetric.lower() != "n":
-				symmetric = input("\nPlease make your selection - Y / N \n>")
-
-			symmetric = True if symmetric.lower() == "y" else False
 			inputs, labels = load_data(filename)
+
+			symmetric = input("\nUse symmetric labels? Y / N \n>")
+			symmetric = check_yes_no(symmetric)
 
 			if symmetric:
 				labels = np.where(labels == 0, -1, labels)
@@ -234,7 +241,11 @@ def main():
 				"3: remove 50% from classB (labels = 1 ) \n" +
 				"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>")
 
-			cm = ast.literal_eval(cm)
+			cm = check_numeric(cm)
+
+			while cm < 1 or cm > 4:
+				cm = input("\nPlease enter a value between 1 and 4\n>")	
+				cm = check_numeric(cm)
 
 			# Perform sub-sampling
 			inputs, labels = subsample(filename,cm)
@@ -247,27 +258,27 @@ def main():
 
 			# Ask for relevant parameters
 			n_points = input("\nEnter number of data points per class ----------- \n>") 
-			n_points = ast.literal_eval(n_points)
+			n_points = check_numeric(n_points)
 
 			cparams = input("\nSet custom parameters for each class? Y / N ----- \n>")
-			cparams = True if cparams == "Y" else False
+			cparams = check_yes_no(cparams)
 
-			linear = input("\nUse linear formula for data generation? Y / N ---- \n>")
-			linear = True if linear == "Y" else False
+			linear = input("\nUse linear formula for data generation? Y / N --- \n>")
+			linear = check_yes_no(linear)
 
 			if cparams:
 				sA = input("\nEnter sigma for class A (default " + ("0.4)\n>" if linear else "0.3)\n>"))
-				sA = ast.literal_eval(sA)
+				sA = check_numeric(sA)
 				sB = input("\nEnter sigma for class B (default " + ("0.4)\n>" if linear else "0.3)\n>"))
-				sB = ast.literal_eval(sB)
+				sB = check_numeric(sB)
 				mAx = input("\nEnter x coordinate for center of class A (default " + ("1.5)\n>" if linear else "1.0)\n>"))
-				mAx = ast.literal_eval(mAx)
+				mAx = check_numeric(mAx)
 				mAy = input("\nEnter y coordinate for center of class A (default " + ("0.5)\n>" if linear else "0.3)\n>"))
-				mAy = ast.literal_eval(mAy)
+				mAy = check_numeric(mAy)
 				mBx = input("\nEnter x coordinate for center of class B (default " + ("-1.5)\n>" if linear else "0.0)\n>"))
-				mBx = ast.literal_eval(mBx)
+				mBx = check_numeric(mBx)
 				mBy = input("\nEnter y coordinate for center of class B (default " + ("-0.5)\n>" if linear else "0.0)\n>"))
-				mBy = ast.literal_eval(mBy)
+				mBy = check_numeric(mBy)
 
 				inputs, labels = generate_binary_data(filename, linear, n_points, sA, sB, mAx, mAy, mBx, mBy)
 				write_array(filename + "_inputs", inputs)
