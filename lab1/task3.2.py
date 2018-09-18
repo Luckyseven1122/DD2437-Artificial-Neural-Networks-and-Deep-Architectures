@@ -155,11 +155,10 @@ def split_data(inputs, labels, test_size, validation_size):
 
 def plot_classes(inputs, labels, hidden_nodes):
     plt.grid(True)
-    plt.subplot(2, 2, 1)
     plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
-    title = "Classification with two layer perceptron /w backprop "
-    title += "hidden nodes: " + str(hidden_nodes)
-    plt.title(title, fontsize=14)
+    #title = "Classification with two layer perceptron /w backprop "
+    #title += "hidden nodes: " + str(hidden_nodes)
+    #plt.title(title, fontsize=14)
     plt.show()
     # plt.waitforbuttonpress()
 
@@ -182,17 +181,17 @@ def plot_cost(training_cost, validation_cost, epochs, use_batch):
     # plt.clf()
 
     plt.subplot(2, 2, 2)
-    ylabel = "error (MSE)"
-    title = "Error for validation and training set" if use_batch else "w/o batch"
+    #ylabel = "error (MSE)"
+    #title = "Error for validation and training set" if use_batch else "w/o batch"
 
     x = np.arange(0, epochs)
     plt.plot(x, training_cost, 'r', label='training cost')
     if validation_cost:
         plt.plot(x, validation_cost, 'g', label='validation cost')
-    plt.title(title, fontsize=14)
-    plt.xlabel('epochs', fontsize=12)
-    plt.legend()
-    plt.ylabel(ylabel, fontsize=12)
+    #plt.title(title, fontsize=14)
+    #plt.xlabel('epochs', fontsize=12)
+    #plt.legend()
+    #plt.ylabel(ylabel, fontsize=12)
     plt.show()
 
 
@@ -203,7 +202,6 @@ def plot_decision_boundary(X, predict):
     h = 0.01
 
 
-    plt.subplot(2, 2, 1)
 
     # Generate a grid of points with distance h between them
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
@@ -215,7 +213,8 @@ def plot_decision_boundary(X, predict):
     # Plot the contour and training examples
     plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
     #plt.scatter(X[:, 0], X[:, 1], c=[0,1], cmap=plt.cm.Spectral)
-    #plt.waitforbuttonpress()
+
+
 
 
 def transfer(H):
@@ -254,8 +253,19 @@ def compute_cost(O, labels):
 
 def predict(W, inputs):
     O, _ = forward_pass(W, inputs)
-    O = np.where(O > 0, 1, 0)
+    O = np.where(O > 0, -1, 1)
     return O
+
+def accuracy(W, inputs, labels):
+    O = predict(W, inputs)
+    L = np.where(labels > 0, -1, 1)
+    assert O.shape[1] == L.shape[1]
+    ctr = 0
+    for i in range(O.shape[1]):
+        if O[:,i] == L[:,i]:
+            ctr += 1
+    ctr = ctr / O.shape[1]
+    return ctr
 
 def generate_weights(inputs, settings):
     if not settings['he_init']:
@@ -282,6 +292,7 @@ def perceptron(training, validation, test, settings):
 
     training_cost = []
     validation_cost = []
+    classification_ratio = []
     inputs = training['inputs']
     labels = training['labels']
 
@@ -295,13 +306,62 @@ def perceptron(training, validation, test, settings):
         W[1] += dW[1]
         print("cost", compute_cost(O, labels))
         training_cost.append(compute_cost(O, labels))
+        classification_ratio.append(np.mean(accuracy(W, inputs, labels)))
         if isinstance(validation['inputs'], np.ndarray):
             _O, _ = forward_pass(W, validation['inputs'])
             print("validation", compute_cost(_O, validation['labels']))
             validation_cost.append(compute_cost(_O, validation['labels']))
 
-    return W, training_cost, validation_cost
+    if isinstance(test['inputs'], np.ndarray):
+        o, _ = forward_pass(W, test['inputs'])
+        print("Test cost:", compute_cost(o, test['labels']))
 
+    return W, training_cost, validation_cost, classification_ratio
+
+'''
+HIDDEN NODES TESTING
+'''
+
+def plot_hidden_node_comparison(inputs, labels, nodes, settings, results):
+    plt.subplot(2, 2, 1)
+    for i, n in enumerate(nodes):
+        plt.plot(np.arange(0, len(results[i]['Cost'])), results[i]['Cost'], label='{} nodes'.format(n))
+
+    plt.subplot(2, 2, 2)
+    for i, n in enumerate(nodes):
+        plt.plot(np.arange(0, len(results[i]['Missclassification'])), results[i]['Missclassification'], label='{} nodes'.format(n))
+
+    for i, r in enumerate(results):
+        plt.subplot(2,2,i+3)
+        plot_decision_boundary(inputs, lambda x: predict(results[i]['W'], x))
+        plot_classes(inputs, labels, hidden_nodes=settings['hidden_nodes'])
+
+    plt.show()
+
+
+def task321():
+
+    # NOTE: Hidden nodes are mapped as nods = n + 1 i.e 2 => 3, 3 => 4, ...
+    nodes = [2, 5]
+    results = []
+    inputs, labels = load_data(sys.argv[1])
+    training, validation, test = split_data(inputs, labels, test_size=0.1, validation_size=0.2)
+
+    for node in nodes:
+        network_settings = {
+            'epochs'       : 10000,
+            'eta'          : 0.01,
+            'hidden_nodes' : node,
+            'output_dim'   : 1,
+            'use_batch'    : True,
+            'use_momentum' : True,
+            'he_init'      : False,
+        }
+
+        W, training_cost, validation_cost, classification_ratio = perceptron(training, validation, test, network_settings)
+        results.append({'Cost': training_cost, 'Missclassification': classification_ratio, 'W': W})
+        #plot_cost(training_cost, validation_cost, network_settings['epochs'], network_settings['use_batch'])
+    plot_hidden_node_comparison(inputs, labels, nodes, network_settings, results)
 
 plt.ion()
 plt.show()
@@ -332,7 +392,7 @@ network_settings = {
     'he_init'      : True,
 }
 '''
-
+'''
 # inputs, labels = generate_bell_function()
 inputs, labels = load_data(sys.argv[1])
 training, validation, test = split_data(inputs, labels, test_size=0.2, validation_size=0.2)
@@ -347,7 +407,7 @@ network_settings = {
     'he_init'      : False,
 }
 
-W, training_cost, validation_cost = perceptron(training, validation, test, network_settings)
+W, training_cost, validation_cost, _ = perceptron(training, validation, test, network_settings)
 
 
 plot_decision_boundary(inputs, lambda x: predict(W, x))
@@ -355,9 +415,9 @@ plot_classes(inputs, labels, hidden_nodes=network_settings['hidden_nodes'])
 plot_cost(training_cost, validation_cost, network_settings['epochs'], network_settings['use_batch'])
 
 # test
-if isinstance(test['inputs'], np.ndarray):
-    o, _ = forward_pass(W, test['inputs'])
-    print("Test cost:", compute_cost(o, test['labels']))
 
+
+'''
+task321()
 plt.subplot(2, 2, 1)
 plt.show(block=True)
