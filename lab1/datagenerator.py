@@ -162,12 +162,13 @@ def print_menu():
 						 "|\n|-1: Generate new dataset \n" +
 						 "|\n|-2: Subsample existing dataset \n" +
 						 "|\n|-3: Plot existing dataset \n" +
+						 "|\n|-4: Set symmetric / asymmetric labels \n"
 						 "|\n|-Other: Exit program\n" +
 						 "|\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~._ \n" +
 						 ">")
 	menu_choice = ast.literal_eval(menu_choice)
 	
-	if (menu_choice < 1) or (menu_choice > 3):
+	if (menu_choice < 1) or (menu_choice > 4):
 		exit()
 
 	return menu_choice
@@ -187,6 +188,26 @@ def main():
 		print_logo()
 
 		filename = input("\nEnter target filename --------------------------- \n>")
+
+		if menu_choice == 4:
+			symmetric = input("\nUse symmetric labels? Y / N \n>")
+			symmetric = True if symmetric == "Y" else False
+			inputs, labels = load_data(filename)
+
+			if symmetric:
+				labels = np.where(labels == 0, -1, labels)
+			else:
+				labels = np.where(labels == -1, 0, labels)
+
+			filename = filename + ("_symmetric" if symmetric else "_asymmetric")			
+			write_array(filename + "_inputs", inputs)
+			write_array(filename + "_labels", labels)
+
+			print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
+
+			mm_query = input("\nReturn to main menu? Y / N \n>")
+			quit = False if mm_query == "Y" else True
+
 		
 		if menu_choice == 3:
 
