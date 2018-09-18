@@ -253,11 +253,12 @@ def compute_cost(O, labels):
 
 def predict(W, inputs):
     O, _ = forward_pass(W, inputs)
-    O = np.where(O > 0, -1, 1)
+    #O = np.where(O > 0, -1, 1)
     return O
 
 def accuracy(W, inputs, labels):
     O = predict(W, inputs)
+    O = np.where(O > 0, -1, 1)
     L = np.where(labels > 0, -1, 1)
     assert O.shape[1] == L.shape[1]
     ctr = 0
@@ -334,15 +335,18 @@ def plot_hidden_node_comparison(inputs, labels, nodes, settings, results):
     plt.subplot(2, 2, 1)
     for i, n in enumerate(nodes):
         plt.plot(np.arange(0, len(results[i]['Cost'])), results[i]['Cost'], label='{} nodes'.format(n))
+        plt.legend()
 
     plt.subplot(2, 2, 2)
     for i, n in enumerate(nodes):
         plt.plot(np.arange(0, len(results[i]['Missclassification'])), results[i]['Missclassification'], label='{} nodes'.format(n))
+        plt.legend()
 
     for i, r in enumerate(results):
         plt.subplot(2,2,i+3)
         plot_decision_boundary(inputs, lambda x: predict(results[i]['W'], x))
-        plot_classes(inputs, labels, hidden_nodes=settings['hidden_nodes'])
+        plot_classes(inputs, labels, hidden_nodes=nodes[i])
+        plt.title('{} hidden nodes'.format(str(nodes[i])))
 
     plt.show()
 
@@ -357,17 +361,17 @@ def task321():
 
     for node in nodes:
         network_settings = {
-            'epochs'       : 100,
-            'eta'          : 0.001,
+            'epochs'       : 2000,
+            'eta'          : 0.003,
             'hidden_nodes' : node,
             'output_dim'   : 1,
-            'use_batch'    : False,
+            'use_batch'    : True,
             'use_momentum' : True,
-            'he_init'      : False,
+            'he_init'      : True,
         }
 
         W, training_cost, validation_cost, classification_ratio = perceptron(training, validation, test, network_settings)
-        results.append({'Cost': training_cost, 'Missclassification': classification_ratio, 'W': W})
+        results.append({'Cost': training_cost, 'Missclassification': classification_ratio, 'W': W.copy()})
         #plot_cost(training_cost, validation_cost, network_settings['epochs'], network_settings['use_batch'])
     plot_hidden_node_comparison(inputs, labels, nodes, network_settings, results)
 
