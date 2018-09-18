@@ -153,6 +153,7 @@ def split_data(inputs, labels, test_size, validation_size):
 
 def plot_classes(inputs, labels):
     plt.grid(True)
+    plt.subplot(2, 2, 1)
     plt.scatter(inputs[0,:], inputs[1,:], c=labels[0,:])
     plt.show()
     plt.waitforbuttonpress()
@@ -164,6 +165,7 @@ def line(W, x):
 
 def draw_line(W):
     x = [-4, 4]
+    plt.subplot(2, 2, 1)
     y = [line(W, x[0]), line(W, x[1])]
     plt.plot(x, y)
     plt.pause(0.01)
@@ -172,8 +174,9 @@ def draw_line(W):
 def plot_cost(training_cost, validation_cost, epochs, use_batch):
     # hold figure until window close
     plt.waitforbuttonpress()
-    plt.clf()
+    # plt.clf()
 
+    plt.subplot(2, 2, 2)
     #ylabel = "error (MSE)" if delta_rule else "error (T/F-ratio)"
     #title += "Gradient ascend w/ batch" if use_batch else "w/o batch"
 
@@ -193,6 +196,9 @@ def plot_decision_boundary(X, predict):
     x_min, x_max = X[0, :].min() - .5, X[0, :].max() + .5
     y_min, y_max = X[1, :].min() - .5, X[1, :].max() + .5
     h = 0.01
+
+
+    plt.subplot(2, 2, 1)
 
     # Generate a grid of points with distance h between them
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
@@ -288,8 +294,8 @@ def perceptron(training, validation, test, settings):
             _O, _ = forward_pass(W, validation['inputs'])
             print("validation", compute_cost(_O, validation['labels']))
             validation_cost.append(compute_cost(_O, validation['labels']))
-    #plot_decision_boundary(inputs, lambda x: predict(W, x))
-    #plot_classes(inputs, labels)
+    plot_decision_boundary(inputs, lambda x: predict(W, x))
+    plot_classes(inputs, labels)
     plot_cost(training_cost, validation_cost, settings['epochs'], settings['use_batch'])
 
     # test
@@ -344,4 +350,5 @@ network_settings = {
 }
 
 perceptron(training, validation, test, network_settings)
+plt.subplot(2, 2, 1)
 plt.show(block=True)
