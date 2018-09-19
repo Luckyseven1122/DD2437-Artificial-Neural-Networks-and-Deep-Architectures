@@ -155,20 +155,22 @@ def network(inputs, settings):
 
     layers = []
     #initializer = tf.keras.initializers.he_normal()
-    initializer = tf.keras.initializers.RandomNormal()
+    initializer = tf.keras.initializers.he_normal()
     for idx, nodes in enumerate(settings['layers']):
         # first layer
         prev_nodes = settings['inputs_dim'] if idx == 0 else settings['layers'][idx-1]
         prev_input = inputs if idx == 0 else layers[-1]
         W = tf.Variable(initializer([prev_nodes, nodes]), name='weight')
-        b = tf.Variable(tf.zeros([nodes]), name='bias')
-        layer = tf.add(tf.matmul(prev_input, W), b)
+        #b = tf.Variable(tf.zeros([nodes]), name='bias')
+        #layer = tf.add(tf.matmul(prev_input, W), b)
+        layer = tf.matmul(prev_input, W)
         layers.append(tf.nn.tanh(layer))
 
         if idx+1 == len(settings['layers']):
             W = tf.Variable(initializer([settings['layers'][-1], settings['outputs_dim']]), name='weight')
-            b = tf.Variable(tf.zeros([settings['outputs_dim']]), name='bias')
-            output = tf.add(tf.matmul(layers[-1], W), b)
+            #b = tf.Variable(tf.zeros([settings['outputs_dim']]), name='bias')
+            #output = tf.add(tf.matmul(layers[-1], W))
+            output = tf.matmul(layers[-1], W)
             weights = tf.trainable_variables()
             regularization = tf.add_n([ tf.nn.l2_loss(w) for w in weights if 'bias' not in w.name]) * settings['beta']
             return output, regularization
@@ -246,7 +248,7 @@ def task431():
         'layers': [7, 6],
         'inputs_dim': int(training['inputs'].shape[1]),
         'outputs_dim': 1,
-        'beta': 0.1,
+        'beta': 0.0000001,
     }
 
     layer_path_name = ''
@@ -259,7 +261,7 @@ def task431():
         'epochs': 1000,
         'eta': 0.0008,
         'patience': 8,
-        'min_delta': 0.00005,
+        'min_delta': 0.00000005,
         'weights_path': './tmp/' + str(network_settings['inputs_dim']) + \
                                            layer_path_name + \
                                            str(network_settings['outputs_dim']) + '_' + \
@@ -293,5 +295,5 @@ def task432():
 
 
 
-#task321()
-task432()
+task431()
+#task432()
