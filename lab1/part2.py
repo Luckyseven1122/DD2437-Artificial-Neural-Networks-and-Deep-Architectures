@@ -155,6 +155,7 @@ def network(inputs, settings):
             return output, regularization
 
 
+
 def train_network(training, validation, test, settings, prediction, optimizer, cost):
     cost_training = []
     cost_validation = []
@@ -177,7 +178,7 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
             print("Success!")
         except:
             print("Error. Storing current weights.")
-            saver.save(sess=sess, save_path=settings['weights_path'])
+            saver.save(sess=sess, save_path=settings['weights_path'] + '/data.ckpt')
 
         for e in range(settings['epochs']):
             _, c_train = sess.run([optimizer, cost], feed_dict={inputs: training['inputs'], labels: training['labels']})
@@ -187,7 +188,7 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
             print('training cost:', c_train, 'valid cost:', c_valid, "Delta validation:", cost_validation[e-1] - cost_validation[e])
 
 
-            if settings['interactive']:
+            if settings['interactive'] and (e % 5) == 0:
                 test_prediction = sess.run(prediction, feed_dict={inputs: test['inputs']})
                 training_prediction = sess.run(prediction, feed_dict={inputs: training['inputs']})
                 validation_prediction = sess.run(prediction, feed_dict={inputs: validation['inputs']})
