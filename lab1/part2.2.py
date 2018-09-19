@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 print("Tensorflow version",tf.VERSION)
 from decimal import *
 from datagenerator import check_yes_no
-
+import json
+import re
+import os.path
 
 '''
     INSTALL TENSORFLOW:
@@ -17,12 +19,22 @@ inputs = tf.placeholder('float')
 labels = tf.placeholder('float')
 
 def save_file(path):
+
     if not check_yes_no(input("Store weights? Y/N: \n> ")):
         shutil.rmtree(path, ignore_errors=True)
 
+def save_settings(settings, path_name):
+    del settings['inputs_dim']
+    del settings['mg_time_series']
+    print("Saving:", path_name)
+    path_name = re.sub(r'[^\w\s\/-=]','',path_name)
+    path_name = os.path.join('./tmp/', path_name + '.txt')
+    with open(path_name, 'w+') as file:
+        file.write(json.dumps(settings, indent=2, sort_keys=False)) # use `pickle.loads` to do the reverse
+        file.close()
 
-def plot_all(train_pred, valid_pred, test_pred, mg_time_series):
-    #plt.close('all')
+def plot_all(train_pred, valid_pred, test_pred, mg_time_series, path):
+    plt.close('all')
     t_train = np.arange(0, train_pred.shape[0])
     t_valid = np.arange(train_pred.shape[0], train_pred.shape[0] + valid_pred.shape[0])
     t_test = np.arange( train_pred.shape[0] + valid_pred.shape[0],  train_pred.shape[0] + valid_pred.shape[0] + test_pred.shape[0])
@@ -42,8 +54,11 @@ def plot_all(train_pred, valid_pred, test_pred, mg_time_series):
     #plt.plot(t_test, test, 'r', alpha=opacity)
     plt.plot(t_test, test_pred, '--b', label='Prediction')
     plt.plot([pred_line_x, pred_line_x], [pred_line_y_min, pred_line_y_max], '--k')
+    plt.ylabel('x(t)')
+    plt.xlabel('t')
     plt.legend()
-    plt.show()
+    #plt.show()
+    plt.savefig('./tmp/' + path + '_all.png')
     #plt.pause(0.001)
 
 def plot_time_series(x):
@@ -57,20 +72,26 @@ def plot_predicted_vs_real(predicted, real):
     plt.plot([y.min(), y.max()], [y.min(), y.max()], '--')
     plt.show()
 
-def plot_prediction(prediction, test):
+def plot_prediction(prediction, test, path):
+    plt.close('all')
     t = np.arange(0, test.shape[0])
     p = np.array(prediction)
-    plt.plot(t, p, 'b')
-    plt.plot(t, test, 'r')
-    plt.show()
+    plt.plot(t, p, 'b', label='prediction')
+    plt.plot(t, test, 'r', label='time series')
+    plt.legend()
+    #plt.show()
+    plt.savefig('./tmp/' + path + '_prediction.png')
 
-def plot_cost(train, valid):
+def plot_cost(train, valid, path):
+    plt.close('all')
     x = np.arange(0, len(train))
     plt.plot(x, np.array(train), 'r', label='training cost')
     plt.plot(x, np.array(valid), 'b', label='validation cost')
-    plt.xlabel('epochs', fontsize=12)
+    plt.xlabel('epochs')
+    plt.ylabel('Mean Squared Error')
     plt.legend()
-    plt.show()
+    #plt.show()
+    plt.savefig('./tmp/' + path + '_cost.png')
 
 def mg_time_series(t_stop):
     '''
@@ -100,23 +121,14 @@ def mg_time_series(t_stop):
 
 def generate_data(t_start, t_stop, validation_percentage, std):
     t = np.arange(t_start, t_stop)
-    x = mg_time_series(t_stop + 5) # add 5 for labels
+    x = mg_time_series(t_stop+5) # add 5 for labels
 
     if std > 0:
         x += np.random.normal(0, std, x.shape)
 
-    #plt.plot(t, x[t_start:])
-    #plt.show()
-
     inputs = [x[t-20], x[t-15], x[t-10], x[t-5], x[t]]
     inputs = np.asarray(inputs)
     labels = x[t+5]
-
-
-    # does any difference?
-    #idx = np.random.permutation(inputs.shape[1])
-    #inputs = inputs[:,idx]
-    #labels = labels[idx]
 
     # size of test according to task description
     test_size = 200
@@ -126,19 +138,10 @@ def generate_data(t_start, t_stop, validation_percentage, std):
     test_inputs  = inputs[:,training_size+validation_size:training_size+validation_size+test_size]
     test_labels  = labels[training_size+validation_size:training_size+validation_size+test_size]
 
-    #idx = np.random.permutation(training_size+validation_size)
-    #inputs = inputs[:,idx]
-    #labels = labels[idx]
-
     train_inputs = inputs[:,:training_size]
     train_labels = labels[:training_size]
     valid_inputs = inputs[:,training_size:training_size+validation_size]
     valid_labels = labels[training_size:training_size+validation_size]
-
-
-    #training = tf.data.Dataset.from_tensors((tf.convert_to_tensor(train_inputs), tf.convert_to_tensor(train_labels)))
-    #validation = tf.data.Dataset.from_tensors((tf.convert_to_tensor(valid_inputs), tf.convert_to_tensor(valid_labels)))
-    #test = tf.data.Dataset.from_tensors((tf.convert_to_tensor(test_inputs), tf.convert_to_tensor(test_labels)))
 
     training = {'inputs': train_inputs.T, 'labels': train_labels.T}
     validation = {'inputs': valid_inputs.T, 'labels': valid_labels.T}
@@ -155,8 +158,6 @@ def network(training, validation, test, settings):
 
     layers = []
     model = tf.keras.Sequential()
-    #initializer = tf.keras.initializers.he_normal()
-    initializer = tf.keras.initializers.RandomNormal()
     for idx, nodes in enumerate(settings['layers']):
         # first layer only
         if idx == 0:
@@ -164,7 +165,7 @@ def network(training, validation, test, settings):
                                      input_dim=training['inputs'].shape[1],
                                      activation='tanh',
                                      kernel_initializer=tf.keras.initializers.he_normal(),
-                                     kernel_regularizer=tf.keras.regularizers.l2(l=settings['beta'])))
+                                     kernel_regularizer=tf.keras.regularizers.l2(l=settings['beta']))) if settings['beta'] > 0 else None
         # last layers
         elif idx+1 == len(settings['layers']):
             model.add(tf.keras.layers.Dense(settings['outputs_dim']))
@@ -173,27 +174,45 @@ def network(training, validation, test, settings):
                                      activation='tanh',
                                      kernel_initializer=tf.keras.initializers.he_normal(),
                                      kernel_regularizer=tf.keras.regularizers.l2(l=settings['beta'])))
-
     model.compile(loss='mean_squared_error', optimizer='adam')
 
+    # EarlyStopping
     callback = [tf.keras.callbacks.EarlyStopping(monitor='val_loss',
                                                 min_delta=settings['min_delta'],
                                                 patience=settings['patience'])]
-
     # Training
-    model.fit(training['inputs'], training['labels'],
+    train_history = model.fit(training['inputs'], training['labels'],
                 callbacks=callback,
                 validation_data=(validation['inputs'], validation['labels']),
                 batch_size=training['inputs'].shape[1],
                 epochs=settings['epochs'])
 
+    accuracy = model.evaluate(x=test['inputs'],
+                              y=test['labels'],
+                              batch_size=test['inputs'].shape[1])
+    settings['accuracy'] = accuracy
+
+    # Loss
+    t_loss = train_history.history['loss'][1:]
+    v_loss = train_history.history['val_loss'][1:]
+    plot_cost(t_loss, v_loss, settings['file_path'])
+
+
+    # Store final loss
+    settings['training_final_mse'] = t_loss[-1]
+    settings['validation_final_mse'] = v_loss[-1]
+
+    # Prediction
     test_pred = model.predict(test['inputs'])
     train_pred = model.predict(training['inputs'])
     valid_pred = model.predict(validation['inputs'])
-    plot_all(train_pred, valid_pred, test_pred, settings['mg_time_series'])
+    series = np.concatenate((np.concatenate((training['labels'], validation['labels'])), test['labels']))
+    plot_all(train_pred, valid_pred, test_pred, settings['mg_time_series'], settings['file_path'])
+    #plot_prediction(test_pred, settings['mg_time_series'][-test_pred.size:], settings['file_path'])
+    plot_prediction(test_pred, test['labels'], settings['file_path'])
 
-
-
+    # Save config to file
+    save_settings(dict(settings.copy()), settings['file_path'])
 
 def layer_to_str(layers):
     layer_path_name = ''
@@ -202,21 +221,28 @@ def layer_to_str(layers):
     return layer_path_name
 
 def task431():
+
     training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0)
+
+
+
     network_settings = {
         # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-        'layers': [7, 6],
+        'layers': [4, 3],
         'inputs_dim': int(training['inputs'].shape[1]),
         'outputs_dim': 1,
-        'beta': 0.001,
-        'mg_time_series': mg_time_series[300:1500],
-        'interactive': True,
-        'epochs': 100,
-        'eta': 0.00008,
+        'beta': 0.0000001,
+        'mg_time_series': mg_time_series[300+5:1500+5],
+        'epochs': 1000,
+        'eta': 0.00000001,
         'patience': 8,
-        'min_delta': 0.005,
-
+        'min_delta': 0.0000000008
     }
+
+    network_settings['file_path'] = layer_to_str(network_settings['layers']) + \
+                                            '_eta=' + str(network_settings['eta']) +\
+                                            '_beta=' + str(network_settings['beta']) +\
+                                            '_delta=' + str(network_settings['min_delta'])
 
 
     network(training, validation, test, network_settings)

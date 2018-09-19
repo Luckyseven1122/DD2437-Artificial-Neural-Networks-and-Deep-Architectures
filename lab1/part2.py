@@ -155,7 +155,7 @@ def network(inputs, settings):
 
     layers = []
     #initializer = tf.keras.initializers.he_normal()
-    initializer = tf.keras.initializers.he_normal()
+    initializer = tf.keras.initializers.RandomNormal()
     for idx, nodes in enumerate(settings['layers']):
         # first layer
         prev_nodes = settings['inputs_dim'] if idx == 0 else settings['layers'][idx-1]
