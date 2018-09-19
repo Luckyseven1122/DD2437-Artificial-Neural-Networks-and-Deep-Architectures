@@ -10,6 +10,13 @@ import math
 from iohandler import write_array
 from iohandler import read_array
 from iohandler import load_data
+from enum import Enum
+
+class menu(Enum):
+	GENERATE_NEW = 1
+	SUBSAMPLE = 2
+	PLOT = 3
+	CONVERT_LABELS = 4
 
 
 class bcolors:
@@ -221,6 +228,73 @@ def check_yes_no(x):
 def pad(x, prompt):
 	return "\n*- " + x.ljust(60, "-") + "._\n" + (">" if prompt else "")
 
+def convert_labels(filename):
+	inputs, labels = load_data(filename)
+
+	symmetric = check_yes_no(input(pad("Use symmetric labels? Y / N ", True)))
+
+	if symmetric:
+		labels = np.where(labels == 0, -1, labels)
+	else:
+		labels = np.where(labels == -1, 0, labels)
+
+	filename = filename + ("_symmetric" if symmetric else "_asymmetric")			
+	write_array(filename + "_inputs", inputs)
+	write_array(filename + "_labels", labels)
+
+	print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
+
+
+def plot(filename):
+	inputs, labels = load_data(filename)
+	plot_classes(inputs,labels)
+
+def subsample(filename):
+	# Ask for class modifier
+	cm = check_numeric(input(
+	pad("Choose class modifier ", False) +
+		"1: remove random 25% from each class \n" +
+		"2: remove 50% from classA (labels = -1) \n" +
+		"3: remove 50% from classB (labels = 1 ) \n" +
+		"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>"))
+
+	while cm < 1 or cm > 4:
+		cm = check_numeric(input(pad("Please enter a value between 1 and 4 ", True)))
+
+	# Perform sub-sampling
+	inputs, labels = subsample(filename,cm)
+	write_array(filename + "_cm" + str(cm) + "_inputs", inputs)
+	write_array(filename + "_cm" + str(cm) + "_labels", labels)
+	plot_classes(inputs,labels)
+	print("\nData written to " + filename + "_cm" + str(cm) + "_inputs.npy and " + filename + "_cm" + str(cm) + "_labels.npy\n")
+
+def generate_new(filename):
+	# Ask for relevant parameters
+	n_points = check_numeric(input(pad("Enter number of data points per class ", True)))
+
+	cparams = check_yes_no(input(pad("Set custom parameters for each class? Y / N ", True)))
+
+	linear = check_yes_no(input(pad("Use linear formula for data generation? Y / N ", True)))
+
+	if cparams:
+		sA = check_numeric(input(pad("Enter sigma for class A (default " + ("0.4) " if linear else "0.3) "), True)))
+		sB = check_numeric(input(pad("Enter sigma for class B (default " + ("0.4) " if linear else "0.3) "), True)))
+		mAx = check_numeric(input(pad("Enter x coordinate for center of class A (default " + ("1.5) " if linear else "1.0) "), True)))
+		mAy = check_numeric(input(pad("Enter y coordinate for center of class A (default " + ("0.5) " if linear else "0.3) "), True)))
+		mBx = check_numeric(input(pad("Enter x coordinate for center of class B (default " + ("-1.5) " if linear else "0.0)\ "), True)))
+		mBy = check_numeric(input(pad("Enter y coordinate for center of class B (default " + ("-0.5) " if linear else "0.0) "), True)))
+
+		inputs, labels = generate_binary_data(filename, linear, n_points, sA, sB, mAx, mAy, mBx, mBy)
+		write_array(filename + "_inputs", inputs)
+		write_array(filename + "_labels", labels)
+		plot_classes(inputs,labels)
+	else:
+		inputs, labels = generate_binary_data(filename, linear, n_points)
+		write_array(filename + "_inputs", inputs)
+		write_array(filename + "_labels", labels)
+		plot_classes(inputs,labels)
+
+	print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
 
 # ------------------ Command line interface ------------------------------
 
@@ -238,76 +312,17 @@ def main():
 
 		filename = input(pad("Enter target filename ", True))
 
-		if menu_choice == 4:
-
-			inputs, labels = load_data(filename)
-
-			symmetric = check_yes_no(input(pad("Use symmetric labels? Y / N ", True)))
-
-			if symmetric:
-				labels = np.where(labels == 0, -1, labels)
-			else:
-				labels = np.where(labels == -1, 0, labels)
-
-			filename = filename + ("_symmetric" if symmetric else "_asymmetric")			
-			write_array(filename + "_inputs", inputs)
-			write_array(filename + "_labels", labels)
-
-			print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
+		if menu_choice == menu.CONVERT_LABELS:
+			convert_labels(filename)
 		
-		if menu_choice == 3:
+		if menu_choice == menu.PLOT:
+			plot(filename)
 
-			inputs, labels = load_data(filename)
-			plot_classes(inputs,labels)
+		if menu_choice == menu.SUBSAMPLE:
+			subsample(filename)
 
-		if menu_choice == 2:
-
-			# Ask for class modifier
-			cm = check_numeric(input(
-				pad("Choose class modifier ", False) +
-				"1: remove random 25% from each class \n" +
-				"2: remove 50% from classA (labels = -1) \n" +
-				"3: remove 50% from classB (labels = 1 ) \n" +
-				"4: remove 20% from classA(1,:)<0 (i.e x1 < 0) and 80% from classA(1,:)>0 (i.e x1 > 0) \n>"))
-
-			while cm < 1 or cm > 4:
-				cm = check_numeric(input(pad("Please enter a value between 1 and 4 ", True)))
-
-			# Perform sub-sampling
-			inputs, labels = subsample(filename,cm)
-			write_array(filename + "_cm" + str(cm) + "_inputs", inputs)
-			write_array(filename + "_cm" + str(cm) + "_labels", labels)
-			plot_classes(inputs,labels)
-			print("\nData written to " + filename + "_cm" + str(cm) + "_inputs.npy and " + filename + "_cm" + str(cm) + "_labels.npy\n")
-
-		if menu_choice == 1:
-
-			# Ask for relevant parameters
-			n_points = check_numeric(input(pad("Enter number of data points per class ", True)))
-
-			cparams = check_yes_no(input(pad("Set custom parameters for each class? Y / N ", True)))
-
-			linear = check_yes_no(input(pad("Use linear formula for data generation? Y / N ", True)))
-
-			if cparams:
-				sA = check_numeric(input(pad("Enter sigma for class A (default " + ("0.4) " if linear else "0.3) "), True)))
-				sB = check_numeric(input(pad("Enter sigma for class B (default " + ("0.4) " if linear else "0.3) "), True)))
-				mAx = check_numeric(input(pad("Enter x coordinate for center of class A (default " + ("1.5) " if linear else "1.0) "), True)))
-				mAy = check_numeric(input(pad("Enter y coordinate for center of class A (default " + ("0.5) " if linear else "0.3) "), True)))
-				mBx = check_numeric(input(pad("Enter x coordinate for center of class B (default " + ("-1.5) " if linear else "0.0)\ "), True)))
-				mBy = check_numeric(input(pad("Enter y coordinate for center of class B (default " + ("-0.5) " if linear else "0.0) "), True)))
-
-				inputs, labels = generate_binary_data(filename, linear, n_points, sA, sB, mAx, mAy, mBx, mBy)
-				write_array(filename + "_inputs", inputs)
-				write_array(filename + "_labels", labels)
-				plot_classes(inputs,labels)
-			else:
-				inputs, labels = generate_binary_data(filename, linear, n_points)
-				write_array(filename + "_inputs", inputs)
-				write_array(filename + "_labels", labels)
-				plot_classes(inputs,labels)
-
-			print("\nData written to " + filename + "_inputs.npy and " + filename + "_labels.npy\n")
+		if menu_choice == menu.GENERATE_NEW:
+			generate_new(filename)
 
 		quit = not return_to_menu()
 
