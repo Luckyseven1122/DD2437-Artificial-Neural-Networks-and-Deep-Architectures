@@ -14,6 +14,7 @@ def save_fig(path):
 
 
 def plot_all(train_pred, valid_pred, test_pred, train, valid, test):
+    plt.close('all')
     t_train = np.arange(0, train.shape[0])
     t_valid = np.arange(train.shape[0], train.shape[0] + valid.shape[0])
     t_test = np.arange( train.shape[0] + valid.shape[0],  train.shape[0] + valid.shape[0] + test.shape[0])
@@ -31,6 +32,7 @@ def plot_all(train_pred, valid_pred, test_pred, train, valid, test):
     plt.plot(t_test, test_pred, '--b')
     plt.plot([pred_line_x, pred_line_x], [pred_line_y_min, pred_line_y_max], '--k')
     plt.show()
+    plt.pause(0.001)
 
 def plot_time_series(x):
     t = np.arange(0, x.shape[0])
@@ -155,6 +157,7 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
     assert settings['epochs'] > 0
     assert settings['patience'] > 0
     assert settings['min_delta'] > 0
+    assert isinstance(settings['interactive'], bool)
     print('Training starts')
 
     saver = tf.train.Saver()
@@ -178,6 +181,13 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
             cost_training.append(c_train)
             cost_validation.append(c_valid)
             print('training cost:', c_train, 'valid cost:', c_valid, "Delta validation:", cost_validation[e-1] - cost_validation[e])
+
+
+            if settings['interactive']:
+                test_prediction = sess.run(prediction, feed_dict={inputs: test['inputs']})
+                training_prediction = sess.run(prediction, feed_dict={inputs: training['inputs']})
+                validation_prediction = sess.run(prediction, feed_dict={inputs: validation['inputs']})
+                plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
 
             if e > 0 and (cost_validation[e-1] - cost_validation[e]) > settings['min_delta']:
                 patience_counter = 0
@@ -214,8 +224,9 @@ for l in network_settings['layers']:
     layer_path_name += str(l)
 
 training_settings = {
-    'epochs': 3,
-    'eta': 0.00001,
+    'interactive': True,
+    'epochs': 1000,
+    'eta': 0.01,
     'patience': 8,
     'min_delta': 0.0001,
     'weights_path': './tmp/' + str(network_settings['inputs_dim']) + \
@@ -225,22 +236,23 @@ training_settings = {
 }
 
 
-
+plt.ion()
+plt.show()
 inputs = tf.placeholder('float')
 labels = tf.placeholder('float')
 
 prediction, regularization = network(inputs, network_settings)
-cost = tf.reduce_mean(tf.square(prediction - labels) + tf.square(regularization))
+cost = tf.reduce_mean(tf.square(prediction - labels) + tf.sqrt(regularization))
 
-#optimizer = tf.train.AdamOptimizer(learning_rate=training_settings['eta']).minimize(cost)
-optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
+optimizer = tf.train.AdamOptimizer(learning_rate=training_settings['eta']).minimize(cost)
+#optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
 cost_training, cost_validation, test_prediction, training_prediction, validation_prediction = train_network(training, validation, test, training_settings, prediction, optimizer, cost)
 
 #plot_time_series(mg_time_series)
 plot_cost(cost_training, cost_validation)
-plot_prediction(test_prediction, test['labels'])
+#plot_prediction(test_prediction, test['labels'])
 #plot_prediction(training_prediction, training['labels'])
-plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
+#plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
 
 '''
 
