@@ -17,24 +17,28 @@ def save_file(path):
         shutil.rmtree(path, ignore_errors=True)
 
 
-def plot_all(train_pred, valid_pred, test_pred, train, valid, test):
+def plot_all(train_pred, valid_pred, test_pred, train, valid, test, mg_time_series):
     plt.close('all')
     t_train = np.arange(0, train.shape[0])
     t_valid = np.arange(train.shape[0], train.shape[0] + valid.shape[0])
     t_test = np.arange( train.shape[0] + valid.shape[0],  train.shape[0] + valid.shape[0] + test.shape[0])
+    t = np.arange(0, train.shape[0] + valid.shape[0] + test.shape[0])
     pred_line_x = train.shape[0] + valid.shape[0]
     pred_line_y_min = test.min()
     pred_line_y_max = test.max()
     #print(t_train.shape, t_valid.shape, t_test.shape)
     opacity = 0.5
     plt.figure(figsize=(15,6))
-    plt.plot(t_train, train, 'r', alpha=opacity)
-    plt.plot(t_train, train_pred, 'b')
-    plt.plot(t_valid, valid, 'r', alpha=opacity)
-    plt.plot(t_valid, valid_pred, 'b')
-    plt.plot(t_test, test, 'r', alpha=opacity)
-    plt.plot(t_test, test_pred, '--b')
+    plt.axis((0,1200,0,1.6))
+    plt.plot(t, mg_time_series,'g', alpha=opacity, label='MG time series')
+    #plt.plot(t_train, train, 'r', alpha=opacity)
+    plt.plot(np.concatenate((t_train, t_valid)), np.concatenate((train_pred, valid_pred)), 'b', label='Trainig/Validation learning')
+    #plt.plot(t_valid, valid, 'r', alpha=opacity)
+    #plt.plot(t_valid, valid_pred, 'b', label='Trainig/Validation data')
+    #plt.plot(t_test, test, 'r', alpha=opacity)
+    plt.plot(t_test, test_pred, '--b', label='Prediction')
     plt.plot([pred_line_x, pred_line_x], [pred_line_y_min, pred_line_y_max], '--k')
+    plt.legend()
     plt.show()
     plt.pause(0.001)
 
@@ -136,7 +140,7 @@ def network(inputs, settings):
     assert settings['beta'] >= 0
 
     layers = []
-    initializer = tf.keras.initializers.he_normal()
+    initializer = tf.keras.initializers.he_normal(seed=2)
     for idx, nodes in enumerate(settings['layers']):
         # first layer
         prev_nodes = settings['inputs_dim'] if idx == 0 else settings['layers'][idx-1]
@@ -192,7 +196,7 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
                 test_prediction = sess.run(prediction, feed_dict={inputs: test['inputs']})
                 training_prediction = sess.run(prediction, feed_dict={inputs: training['inputs']})
                 validation_prediction = sess.run(prediction, feed_dict={inputs: validation['inputs']})
-                plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
+                plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'], settings['mg_time_series'])
 
             if e > 0 and (cost_validation[e-1] - cost_validation[e]) > settings['min_delta']:
                 patience_counter = 0
@@ -215,13 +219,15 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
 
 training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0.03)
 
+print(mg_time_series.shape)
+
 
 network_settings = {
     # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-    'layers': [8, 7],
+    'layers': [8],
     'inputs_dim': int(training['inputs'].shape[1]),
     'outputs_dim': 1,
-    'beta': 0.000001,
+    'beta': 0.001,
 }
 
 layer_path_name = ''
@@ -229,9 +235,10 @@ for l in network_settings['layers']:
     layer_path_name += str(l)
 
 training_settings = {
+    'mg_time_series': mg_time_series[300:1500],
     'interactive': True,
     'epochs': 1000,
-    'eta': 0.001,
+    'eta': 0.0008,
     'patience': 8,
     'min_delta': 0.0001,
     'weights_path': './tmp/' + str(network_settings['inputs_dim']) + \
@@ -254,8 +261,11 @@ optimizer = tf.train.AdamOptimizer(learning_rate=training_settings['eta']).minim
 cost_training, cost_validation, test_prediction, training_prediction, validation_prediction = train_network(training, validation, test, training_settings, prediction, optimizer, cost)
 
 #plot_time_series(mg_time_series)
-plot_cost(cost_training, cost_validation)
+#plot_cost(cost_training, cost_validation)
+plt.close('all')
+plt.ioff()
 #plot_prediction(test_prediction, test['labels'])
+#plot_cost(cost_training, cost_validation)
 #plot_prediction(training_prediction, training['labels'])
 #plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
 
