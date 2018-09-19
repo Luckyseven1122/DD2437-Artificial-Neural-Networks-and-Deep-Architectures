@@ -3,14 +3,18 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 print("Tensorflow version",tf.VERSION)
 from decimal import *
+import shutil
+from datagenerator import check_yes_no
+
 
 '''
     INSTALL TENSORFLOW:
     pip3 install -r requirements.txt
 '''
 
-def save_fig(path):
-    plt.savefig('./figures/part2/' + path)
+def save_file(path):
+    if not check_yes_no(input("Store weights? Y/N: \n> ")):
+        shutil.rmtree(path, ignore_errors=True)
 
 
 def plot_all(train_pred, valid_pred, test_pred, train, valid, test):
@@ -168,8 +172,8 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
 
         # Try loading weights
         try:
-            print("Trying to load weights:",settings['weights_path'])
-            saver.restore(sess=sess, save_path=settings['weights_path']) #"/tmp/model.ckpt"
+            print("Trying to load weights:",settings['weights_path'] + '/data.ckpt')
+            saver.restore(sess=sess, save_path=settings['weights_path'] + '/data.ckpt') #"/tmp/model.ckpt"
             print("Success!")
         except:
             print("Error. Storing current weights.")
@@ -213,7 +217,7 @@ training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0
 
 network_settings = {
     # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-    'layers': [8],
+    'layers': [8, 7],
     'inputs_dim': int(training['inputs'].shape[1]),
     'outputs_dim': 1,
     'beta': 0.000001,
@@ -226,13 +230,13 @@ for l in network_settings['layers']:
 training_settings = {
     'interactive': True,
     'epochs': 1000,
-    'eta': 0.01,
+    'eta': 0.001,
     'patience': 8,
     'min_delta': 0.0001,
     'weights_path': './tmp/' + str(network_settings['inputs_dim']) + \
                                        layer_path_name + \
                                        str(network_settings['outputs_dim']) + '_' + \
-                                       str(network_settings['beta']) + '/data.ckpt'
+                                       str(network_settings['beta'])
 }
 
 
@@ -254,6 +258,5 @@ plot_cost(cost_training, cost_validation)
 #plot_prediction(training_prediction, training['labels'])
 #plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
 
-'''
 
-'''
+save_file(training_settings['weights_path'])
