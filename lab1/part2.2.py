@@ -202,7 +202,7 @@ def network(training, validation, test, settings):
                 batch_size=training['inputs'].shape[1],
                 epochs=settings['epochs'])
 
-
+    '''
     # extract weights
     weights = [w for w in model.trainable_weights if 'kernel' in w.name]
     _w = []
@@ -237,7 +237,7 @@ def network(training, validation, test, settings):
 
     # Save config to file
     save_settings(dict(settings.copy()), settings['file_path'])
-    '''
+
 
     # get weights
     #outputs = [layer.get_weights() for layer in model.layers]
@@ -250,12 +250,10 @@ def layer_to_str(layers):
         layer_path_name += str(l)
     return layer_path_name
 
-def task431():
+def task431_histogram():
 
     training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0)
 
-    regularizers = [0, 10**-3, 10**-2]
-    weights = []
     for i, r in enumerate(regularizers):
         network_settings = {
             # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
@@ -276,15 +274,8 @@ def task431():
                                                 '_delta=' + str(network_settings['min_delta'])
 
 
-        weights.append(network(training, validation, test, network_settings))
-    plot_histograms(weights)
-    #plot_time_series(mg_time_series)
-    #plot_cost(cost_training, cost_validation)
-
-    #plot_prediction(test_prediction, test['labels'])
-    #plot_cost(cost_training, cost_validation)
-    #plot_prediction(training_prediction, training['labels'])
-    #plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
+    network(training, validation, test, network_settings)
+        #weights.append(network(training, validation, test, network_settings))
 
 
 
@@ -294,6 +285,6 @@ def task432():
     training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0.3)
 
 
-
 task431()
+#task431_histogram()
 #task432()
