@@ -102,12 +102,16 @@ def generate_data(t_start, t_stop, validation_percentage, std):
     t = np.arange(t_start, t_stop)
     x = mg_time_series(t_stop + 5) # add 5 for labels
 
+    if std > 0:
+        x += np.random.normal(0, std, x.shape)
+
     #plt.plot(t, x[t_start:])
     #plt.show()
 
     inputs = [x[t-20], x[t-15], x[t-10], x[t-5], x[t]]
     inputs = np.asarray(inputs)
     labels = x[t+5]
+
 
     # does any difference?
     #idx = np.random.permutation(inputs.shape[1])
@@ -236,11 +240,7 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
 
 
 def task431():
-    training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0.03)
-
-    print(mg_time_series.shape)
-
-
+    training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0)
     network_settings = {
         # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
         'layers': [7, 6],
@@ -267,8 +267,6 @@ def task431():
     }
 
 
-
-
     prediction, regularization = network(inputs, network_settings)
     cost = tf.reduce_mean(tf.square(prediction - labels) + tf.sqrt(regularization))
 
@@ -288,5 +286,12 @@ def task431():
     save_file(training_settings['weights_path'])
 
 
+def task432():
 
-task431()
+    std = [0.3, 0.09, 0.18]
+    training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0.3)
+
+
+
+#task321()
+task432()
