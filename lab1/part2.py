@@ -136,13 +136,13 @@ def network(inputs, settings):
         prev_nodes = settings['inputs_dim'] if idx == 0 else settings['layers'][idx-1]
         prev_input = inputs if idx == 0 else layers[-1]
         W = tf.Variable(initializer([prev_nodes, nodes]))
-        b = tf.Variable(tf.zeros([nodes]))
+        b = tf.Variable(tf.zeros([nodes]), name='bias')
         layer = tf.add(tf.matmul(prev_input, W), b)
         layers.append(tf.nn.tanh(layer))
 
         if idx+1 == len(settings['layers']):
             W = tf.Variable(initializer([settings['layers'][-1], settings['outputs_dim']]))
-            b = tf.Variable(tf.zeros([settings['outputs_dim']]))
+            b = tf.Variable(tf.zeros([settings['outputs_dim']]), name='bias')
             output = tf.add(tf.matmul(layers[-1], W), b)
             weights = tf.trainable_variables()
             regularization = tf.add_n([ tf.nn.l2_loss(w) for w in weights if 'bias' not in w.name]) * settings['beta']
