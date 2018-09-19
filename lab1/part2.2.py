@@ -33,6 +33,18 @@ def save_settings(settings, path_name):
         file.write(json.dumps(settings, indent=2, sort_keys=False)) # use `pickle.loads` to do the reverse
         file.close()
 
+def plot_histograms(weights):
+
+    # sort weights together
+    opacity = [1, 0.8, 0.6]
+    plt.ylabel('Frequency')
+    for i, w in enumerate(weights):
+        plt.subplot(1,3,i+1)
+        for j, val in enumerate(w):
+            plt.hist(val, bins=300, histtype='step', range=(-1.1, 1.1), label='W' + str(i+1))
+        plt.legend()
+    plt.show()
+
 def plot_all(train_pred, valid_pred, test_pred, mg_time_series, path):
     plt.close('all')
     t_train = np.arange(0, train_pred.shape[0])
@@ -165,16 +177,19 @@ def network(training, validation, test, settings):
                                      input_dim=training['inputs'].shape[1],
                                      activation='tanh',
                                      kernel_initializer=tf.keras.initializers.he_normal(),
-                                     kernel_regularizer=tf.keras.regularizers.l2(l=settings['beta']))) if settings['beta'] > 0 else None
-        # last layers
-        elif idx+1 == len(settings['layers']):
-            model.add(tf.keras.layers.Dense(settings['outputs_dim']))
+                                     kernel_regularizer=tf.keras.regularizers.l2(l=settings['beta']) if settings['beta'] > 0 else None))
         else:
             model.add(tf.keras.layers.Dense(nodes,
                                      activation='tanh',
                                      kernel_initializer=tf.keras.initializers.he_normal(),
-                                     kernel_regularizer=tf.keras.regularizers.l2(l=settings['beta'])))
+                                     kernel_regularizer=tf.keras.regularizers.l2(l=settings['beta']) if settings['beta'] > 0 else None))
+    # add last layer
+    model.add(tf.keras.layers.Dense(settings['outputs_dim']))
+
     model.compile(loss='mean_squared_error', optimizer='adam')
+
+
+    #tf.keras.utils.plot_model(model, to_file='./tmp/model.png')
 
     # EarlyStopping
     callback = [tf.keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -187,6 +202,15 @@ def network(training, validation, test, settings):
                 batch_size=training['inputs'].shape[1],
                 epochs=settings['epochs'])
 
+
+    # extract weights
+    weights = [w for w in model.trainable_weights if 'kernel' in w.name]
+    _w = []
+    for w in weights:
+        _w.append(tf.keras.backend.get_value(w).flatten())
+    return _w
+
+    '''
     accuracy = model.evaluate(x=test['inputs'],
                               y=test['labels'],
                               batch_size=test['inputs'].shape[1])
@@ -213,6 +237,12 @@ def network(training, validation, test, settings):
 
     # Save config to file
     save_settings(dict(settings.copy()), settings['file_path'])
+    '''
+
+    # get weights
+    #outputs = [layer.get_weights() for layer in model.layers]
+    #weights, biases = model.layers[0].get_weights()
+
 
 def layer_to_str(layers):
     layer_path_name = ''
@@ -224,29 +254,30 @@ def task431():
 
     training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0)
 
+    regularizers = [0, 10**-3, 10**-2]
+    weights = []
+    for i, r in enumerate(regularizers):
+        network_settings = {
+            # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
+            'layers': [90, 100],
+            'inputs_dim': int(training['inputs'].shape[1]),
+            'outputs_dim': 1,
+            'beta': r,
+            'mg_time_series': mg_time_series[300+5:1500+5],
+            'epochs': 5,
+            'eta': 0.00001,
+            'patience': 8,
+            'min_delta': 0.000000000000000008
+        }
+
+        network_settings['file_path'] = layer_to_str(network_settings['layers']) + \
+                                                '_eta=' + str(network_settings['eta']) +\
+                                                '_beta=' + str(network_settings['beta']) +\
+                                                '_delta=' + str(network_settings['min_delta'])
 
 
-    network_settings = {
-        # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-        'layers': [4, 3],
-        'inputs_dim': int(training['inputs'].shape[1]),
-        'outputs_dim': 1,
-        'beta': 0.0000001,
-        'mg_time_series': mg_time_series[300+5:1500+5],
-        'epochs': 1000,
-        'eta': 0.00000001,
-        'patience': 8,
-        'min_delta': 0.0000000008
-    }
-
-    network_settings['file_path'] = layer_to_str(network_settings['layers']) + \
-                                            '_eta=' + str(network_settings['eta']) +\
-                                            '_beta=' + str(network_settings['beta']) +\
-                                            '_delta=' + str(network_settings['min_delta'])
-
-
-    network(training, validation, test, network_settings)
-
+        weights.append(network(training, validation, test, network_settings))
+    plot_histograms(weights)
     #plot_time_series(mg_time_series)
     #plot_cost(cost_training, cost_validation)
 
