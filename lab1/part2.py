@@ -3,17 +3,22 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 print("Tensorflow version",tf.VERSION)
 from decimal import *
+import shutil
+from datagenerator import check_yes_no
+
 
 '''
     INSTALL TENSORFLOW:
     pip3 install -r requirements.txt
 '''
 
-def save_fig(path):
-    plt.savefig('./figures/part2/' + path)
+def save_file(path):
+    if not check_yes_no(input("Store weights? Y/N: \n> ")):
+        shutil.rmtree(path, ignore_errors=True)
 
 
 def plot_all(train_pred, valid_pred, test_pred, train, valid, test):
+    plt.close('all')
     t_train = np.arange(0, train.shape[0])
     t_valid = np.arange(train.shape[0], train.shape[0] + valid.shape[0])
     t_test = np.arange( train.shape[0] + valid.shape[0],  train.shape[0] + valid.shape[0] + test.shape[0])
@@ -31,6 +36,7 @@ def plot_all(train_pred, valid_pred, test_pred, train, valid, test):
     plt.plot(t_test, test_pred, '--b')
     plt.plot([pred_line_x, pred_line_x], [pred_line_y_min, pred_line_y_max], '--k')
     plt.show()
+    plt.pause(0.001)
 
 def plot_time_series(x):
     t = np.arange(0, x.shape[0])
@@ -136,13 +142,13 @@ def network(inputs, settings):
         prev_nodes = settings['inputs_dim'] if idx == 0 else settings['layers'][idx-1]
         prev_input = inputs if idx == 0 else layers[-1]
         W = tf.Variable(initializer([prev_nodes, nodes]))
-        b = tf.Variable(tf.zeros([nodes]))
+        b = tf.Variable(tf.zeros([nodes]), name='bias')
         layer = tf.add(tf.matmul(prev_input, W), b)
         layers.append(tf.nn.tanh(layer))
 
         if idx+1 == len(settings['layers']):
             W = tf.Variable(initializer([settings['layers'][-1], settings['outputs_dim']]))
-            b = tf.Variable(tf.zeros([settings['outputs_dim']]))
+            b = tf.Variable(tf.zeros([settings['outputs_dim']]), name='bias')
             output = tf.add(tf.matmul(layers[-1], W), b)
             weights = tf.trainable_variables()
             regularization = tf.add_n([ tf.nn.l2_loss(w) for w in weights if 'bias' not in w.name]) * settings['beta']
@@ -155,6 +161,7 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
     assert settings['epochs'] > 0
     assert settings['patience'] > 0
     assert settings['min_delta'] > 0
+    assert isinstance(settings['interactive'], bool)
     print('Training starts')
 
     saver = tf.train.Saver()
@@ -165,8 +172,8 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
 
         # Try loading weights
         try:
-            print("Trying to load weights:",settings['weights_path'])
-            saver.restore(sess=sess, save_path=settings['weights_path']) #"/tmp/model.ckpt"
+            print("Trying to load weights:",settings['weights_path'] + '/data.ckpt')
+            saver.restore(sess=sess, save_path=settings['weights_path'] + '/data.ckpt') #"/tmp/model.ckpt"
             print("Success!")
         except:
             print("Error. Storing current weights.")
@@ -178,6 +185,13 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
             cost_training.append(c_train)
             cost_validation.append(c_valid)
             print('training cost:', c_train, 'valid cost:', c_valid, "Delta validation:", cost_validation[e-1] - cost_validation[e])
+
+
+            if settings['interactive']:
+                test_prediction = sess.run(prediction, feed_dict={inputs: test['inputs']})
+                training_prediction = sess.run(prediction, feed_dict={inputs: training['inputs']})
+                validation_prediction = sess.run(prediction, feed_dict={inputs: validation['inputs']})
+                plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
 
             if e > 0 and (cost_validation[e-1] - cost_validation[e]) > settings['min_delta']:
                 patience_counter = 0
@@ -203,7 +217,7 @@ training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0
 
 network_settings = {
     # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-    'layers': [8],
+    'layers': [8, 7],
     'inputs_dim': int(training['inputs'].shape[1]),
     'outputs_dim': 1,
     'beta': 0.000001,
@@ -214,34 +228,35 @@ for l in network_settings['layers']:
     layer_path_name += str(l)
 
 training_settings = {
-    'epochs': 3,
-    'eta': 0.00001,
+    'interactive': True,
+    'epochs': 1000,
+    'eta': 0.001,
     'patience': 8,
     'min_delta': 0.0001,
     'weights_path': './tmp/' + str(network_settings['inputs_dim']) + \
                                        layer_path_name + \
                                        str(network_settings['outputs_dim']) + '_' + \
-                                       str(network_settings['beta']) + '/data.ckpt'
+                                       str(network_settings['beta'])
 }
 
 
-
+plt.ion()
+plt.show()
 inputs = tf.placeholder('float')
 labels = tf.placeholder('float')
 
 prediction, regularization = network(inputs, network_settings)
-cost = tf.reduce_mean(tf.square(prediction - labels) + tf.square(regularization))
+cost = tf.reduce_mean(tf.square(prediction - labels) + tf.sqrt(regularization))
 
-#optimizer = tf.train.AdamOptimizer(learning_rate=training_settings['eta']).minimize(cost)
-optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
+optimizer = tf.train.AdamOptimizer(learning_rate=training_settings['eta']).minimize(cost)
+#optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
 cost_training, cost_validation, test_prediction, training_prediction, validation_prediction = train_network(training, validation, test, training_settings, prediction, optimizer, cost)
 
 #plot_time_series(mg_time_series)
 plot_cost(cost_training, cost_validation)
-plot_prediction(test_prediction, test['labels'])
+#plot_prediction(test_prediction, test['labels'])
 #plot_prediction(training_prediction, training['labels'])
-plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
+#plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
 
-'''
 
-'''
+save_file(training_settings['weights_path'])
