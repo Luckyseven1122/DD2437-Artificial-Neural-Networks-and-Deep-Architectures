@@ -1,7 +1,6 @@
 {
   "layers": [
-    4,
-    3
+    4
   ],
   "outputs_dim": 1,
   "beta": 1e-07,

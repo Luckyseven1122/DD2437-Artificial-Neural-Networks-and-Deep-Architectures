@@ -19,7 +19,6 @@ inputs = tf.placeholder('float')
 labels = tf.placeholder('float')
 
 def save_file(path):
-
     if not check_yes_no(input("Store weights? Y/N: \n> ")):
         shutil.rmtree(path, ignore_errors=True)
 
@@ -33,8 +32,19 @@ def save_settings(settings, path_name):
         file.write(json.dumps(settings, indent=2, sort_keys=False)) # use `pickle.loads` to do the reverse
         file.close()
 
-def plot_histograms(weights):
+def plot_validation_noise(data, hidden_nodes, std, path):
+    plt.close('all')
+    for idx, nodes in enumerate(data):
+        x = len(nodes)
+        x = np.arange(0,x)
+        print(idx)
+        plt.plot(x, nodes, label=str(hidden_nodes[idx])+' hidden nodes')
+    plt.legend()
+    plt.ylabel('Validation MSE')
+    plt.xlabel('Epochs')
+    plt.savefig('./tmp/' + path + '_std='+ str(std) +'.png')
 
+def plot_histograms(weights):
     # sort weights together
     opacity = [1, 0.8, 0.6]
     plt.ylabel('Frequency')
@@ -73,10 +83,15 @@ def plot_all(train_pred, valid_pred, test_pred, mg_time_series, path):
     plt.savefig('./tmp/' + path + '_all.png')
     #plt.pause(0.001)
 
-def plot_time_series(x):
+def plot_time_series(x,path):
+    plt.close('all')
     t = np.arange(0, x.shape[0])
-    plt.plot(t, x)
-    plt.show()
+    plt.plot(t, x, label='mg time series')
+    plt.xlabel('t')
+    plt.ylabel('x(t)')
+    plt.legend()
+    plt.savefig('./tmp/' + path + '_noisy_times_series.png')
+
 
 def plot_predicted_vs_real(predicted, real):
     y = real
@@ -129,6 +144,7 @@ def mg_time_series(t_stop):
             delay = x[delay]
         x.append(x[-1] + ((beta * delay)/(1 + delay**n)) - gamma*x[-1])
     return np.asarray(x)
+
 
 
 def generate_data(t_start, t_stop, validation_percentage, std):
@@ -192,9 +208,13 @@ def network(training, validation, test, settings):
     #tf.keras.utils.plot_model(model, to_file='./tmp/model.png')
 
     # EarlyStopping
-    callback = [tf.keras.callbacks.EarlyStopping(monitor='val_loss',
-                                                min_delta=settings['min_delta'],
-                                                patience=settings['patience'])]
+    if settings['min_delta'] > 0:
+        callback = [tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                                     min_delta=settings['min_delta'],
+                                                     patience=settings['patience'])]
+    else:
+        callback = None
+
     # Training
     train_history = model.fit(training['inputs'], training['labels'],
                 callbacks=callback,
@@ -211,32 +231,37 @@ def network(training, validation, test, settings):
     return _w
 
     '''
+
+    '''
     accuracy = model.evaluate(x=test['inputs'],
                               y=test['labels'],
                               batch_size=test['inputs'].shape[1])
     settings['accuracy'] = accuracy
-
+    '''
     # Loss
-    t_loss = train_history.history['loss'][1:]
-    v_loss = train_history.history['val_loss'][1:]
-    plot_cost(t_loss, v_loss, settings['file_path'])
+    #t_loss = train_history.history['loss']
+    #v_loss = train_history.history['val_loss']
+    return train_history.history['val_loss']
+    #plot_cost(t_loss, v_loss, settings['file_path'])
 
 
     # Store final loss
-    settings['training_final_mse'] = t_loss[-1]
-    settings['validation_final_mse'] = v_loss[-1]
+    #settings['training_final_mse'] = t_loss[-1]
+    #settings['validation_final_mse'] = v_loss[-1]
 
     # Prediction
-    test_pred = model.predict(test['inputs'])
-    train_pred = model.predict(training['inputs'])
-    valid_pred = model.predict(validation['inputs'])
-    series = np.concatenate((np.concatenate((training['labels'], validation['labels'])), test['labels']))
-    plot_all(train_pred, valid_pred, test_pred, settings['mg_time_series'], settings['file_path'])
+    #test_pred = model.predict(test['inputs'])
+    #train_pred = model.predict(training['inputs'])
+    #valid_pred = model.predict(validation['inputs'])
+    #series = np.concatenate((np.concatenate((training['labels'], validation['labels'])), test['labels']))
+    #plot_all(train_pred, valid_pred, test_pred, settings['mg_time_series'], settings['file_path'])
     #plot_prediction(test_pred, settings['mg_time_series'][-test_pred.size:], settings['file_path'])
-    plot_prediction(test_pred, test['labels'], settings['file_path'])
+    #plot_prediction(test_pred, test['labels'], settings['file_path'])
+
+    #plot_time_series(settings['mg_time_series'], settings['file_path'])
 
     # Save config to file
-    save_settings(dict(settings.copy()), settings['file_path'])
+    #save_settings(dict(settings.copy()), settings['file_path'])
 
 
     # get weights
@@ -250,41 +275,64 @@ def layer_to_str(layers):
         layer_path_name += str(l)
     return layer_path_name
 
-def task431_histogram():
+def task431():
+
+
 
     training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0)
+    network_settings = {
+        # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
+        'layers': [4, 3],
+        'inputs_dim': int(training['inputs'].shape[1]),
+        'outputs_dim': 1,
+        'beta': 0,
+        'mg_time_series': mg_time_series[300+5:1500+5],
+        'epochs': 5,
+        'eta': 0.00001,
+        'patience': 8,
+        'min_delta': 0.000000000000000008
+    }
 
-    for i, r in enumerate(regularizers):
-        network_settings = {
-            # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-            'layers': [90, 100],
-            'inputs_dim': int(training['inputs'].shape[1]),
-            'outputs_dim': 1,
-            'beta': r,
-            'mg_time_series': mg_time_series[300+5:1500+5],
-            'epochs': 5,
-            'eta': 0.00001,
-            'patience': 8,
-            'min_delta': 0.000000000000000008
-        }
-
-        network_settings['file_path'] = layer_to_str(network_settings['layers']) + \
+    network_settings['file_path'] = layer_to_str(network_settings['layers']) + \
                                                 '_eta=' + str(network_settings['eta']) +\
                                                 '_beta=' + str(network_settings['beta']) +\
                                                 '_delta=' + str(network_settings['min_delta'])
 
-
     network(training, validation, test, network_settings)
-        #weights.append(network(training, validation, test, network_settings))
-
 
 
 def task432():
 
-    std = [0.3, 0.09, 0.18]
-    training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0.3)
 
+    training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0)
+    noise_std = [0.03, 0.09, 0.18]
+    second_hidden_layer = [3, 6, 8]
+    for idx, std in enumerate(noise_std):
+        data = []
+        for nodes in second_hidden_layer:
+            training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=std)
 
-task431()
-#task431_histogram()
-#task432()
+            network_settings = {
+                # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
+                'layers': [4, nodes],
+                'inputs_dim': int(training['inputs'].shape[1]),
+                'outputs_dim': 1,
+                'beta': 0, #10**(-5),
+                'mg_time_series': mg_time_series[300+5:1500+5],
+                'epochs': 100,
+                'eta': 10**(-5),
+                'patience': 8,
+                'min_delta': 0#8*10**(-5)
+            }
+
+            network_settings['file_path'] = layer_to_str(network_settings['layers']) + \
+                                                        '_std=' + str(std) +\
+                                                        '_eta=' + str(network_settings['eta']) +\
+                                                        '_beta=' + str(network_settings['beta']) +\
+                                                        '_delta=' + str(network_settings['min_delta'])
+
+            data.append(network(training, validation, test, network_settings))
+        plot_validation_noise(data, second_hidden_layer, std, layer_to_str(network_settings['layers']))
+
+#task431()
+task432()
