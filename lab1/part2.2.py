@@ -314,7 +314,7 @@ def task432():
 
             network_settings = {
                 # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-                'layers': [4, nodes],
+                'layers': [9, nodes],
                 'inputs_dim': int(training['inputs'].shape[1]),
                 'outputs_dim': 1,
                 'beta': 0, #10**(-5),
