@@ -7,6 +7,7 @@ from datagenerator import check_yes_no
 import json
 import re
 import os.path
+import time
 
 '''
     INSTALL TENSORFLOW:
@@ -38,11 +39,11 @@ def plot_validation_noise(data, hidden_nodes, std, path):
         x = len(nodes)
         x = np.arange(0,x)
         print(idx)
-        plt.plot(x, nodes, label=str(hidden_nodes[idx])+' hidden nodes')
+        plt.plot(x, nodes, label=str('lambda' + str(hidden_nodes[idx])))
     plt.legend()
     plt.ylabel('Validation MSE')
     plt.xlabel('Epochs')
-    plt.savefig('./tmp/' + path + '_std='+ str(std) +'.png')
+    plt.savefig('./tmp/' + path + '_reg='+ str(hidden_nodes[idx]) + '_std=' + str(std) +'.png')
 
 def plot_histograms(weights):
     # sort weights together
@@ -202,6 +203,9 @@ def network(training, validation, test, settings):
     # add last layer
     model.add(tf.keras.layers.Dense(settings['outputs_dim']))
 
+    #model.save_weights('./tmp/weights.h5')
+    #model.load_weights('./tmp/weights.h5')
+
     model.compile(loss='mean_squared_error', optimizer='adam')
 
 
@@ -216,11 +220,15 @@ def network(training, validation, test, settings):
         callback = None
 
     # Training
+    t1 = time.time()
     train_history = model.fit(training['inputs'], training['labels'],
                 callbacks=callback,
                 validation_data=(validation['inputs'], validation['labels']),
                 batch_size=training['inputs'].shape[1],
                 epochs=settings['epochs'])
+    t2 = time.time()
+
+
 
     '''
     # extract weights
@@ -232,36 +240,37 @@ def network(training, validation, test, settings):
 
     '''
 
-    '''
+
     accuracy = model.evaluate(x=test['inputs'],
                               y=test['labels'],
                               batch_size=test['inputs'].shape[1])
     settings['accuracy'] = accuracy
-    '''
+    print(settings['accuracy'])
+
     # Loss
-    #t_loss = train_history.history['loss']
-    #v_loss = train_history.history['val_loss']
-    return train_history.history['val_loss']
-    #plot_cost(t_loss, v_loss, settings['file_path'])
+    t_loss = train_history.history['loss']
+    v_loss = train_history.history['val_loss']
+    plot_cost(t_loss, v_loss, settings['file_path'])
+
 
 
     # Store final loss
-    #settings['training_final_mse'] = t_loss[-1]
-    #settings['validation_final_mse'] = v_loss[-1]
+    settings['training_final_mse'] = t_loss[-1]
+    settings['validation_final_mse'] = v_loss[-1]
 
     # Prediction
-    #test_pred = model.predict(test['inputs'])
-    #train_pred = model.predict(training['inputs'])
-    #valid_pred = model.predict(validation['inputs'])
-    #series = np.concatenate((np.concatenate((training['labels'], validation['labels'])), test['labels']))
-    #plot_all(train_pred, valid_pred, test_pred, settings['mg_time_series'], settings['file_path'])
-    #plot_prediction(test_pred, settings['mg_time_series'][-test_pred.size:], settings['file_path'])
+    test_pred = model.predict(test['inputs'])
+    train_pred = model.predict(training['inputs'])
+    valid_pred = model.predict(validation['inputs'])
+    series = np.concatenate((np.concatenate((training['labels'], validation['labels'])), test['labels']))
+    plot_all(train_pred, valid_pred, test_pred, settings['mg_time_series'], settings['file_path'])
+    plot_prediction(test_pred, settings['mg_time_series'][-test_pred.size:], settings['file_path'])
     #plot_prediction(test_pred, test['labels'], settings['file_path'])
 
     #plot_time_series(settings['mg_time_series'], settings['file_path'])
 
     # Save config to file
-    #save_settings(dict(settings.copy()), settings['file_path'])
+    save_settings(dict(settings.copy()), settings['file_path'])
 
 
     # get weights
@@ -282,7 +291,7 @@ def task431():
     training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0)
     network_settings = {
         # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-        'layers': [4, 3],
+        'layers': [9, 6],
         'inputs_dim': int(training['inputs'].shape[1]),
         'outputs_dim': 1,
         'beta': 0,
@@ -302,37 +311,26 @@ def task431():
 
 
 def task432():
+    training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0.03)
+    network_settings = {
+        # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
+        'layers': [9],
+        'inputs_dim': int(training['inputs'].shape[1]),
+        'outputs_dim': 1,
+        'beta': 1e-6,
+        'mg_time_series': mg_time_series[300+5:1500+5],
+        'epochs': 1000,
+        'eta': 1e-6,
+        'patience': 8,
+        'min_delta': 1e-7#8*10**(-5)
+    }
 
+    network_settings['file_path'] = layer_to_str(network_settings['layers']) + \
+                                                '_eta=' + str(network_settings['eta']) +\
+                                                '_beta=' + str(network_settings['beta']) +\
+                                                '_delta=' + str(network_settings['min_delta'])
 
-    training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0)
-    noise_std = [0.03, 0.09, 0.18]
-    second_hidden_layer = [3, 6, 8]
-    for idx, std in enumerate(noise_std):
-        data = []
-        for nodes in second_hidden_layer:
-            training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=std)
-
-            network_settings = {
-                # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-                'layers': [9, nodes],
-                'inputs_dim': int(training['inputs'].shape[1]),
-                'outputs_dim': 1,
-                'beta': 0, #10**(-5),
-                'mg_time_series': mg_time_series[300+5:1500+5],
-                'epochs': 100,
-                'eta': 10**(-5),
-                'patience': 8,
-                'min_delta': 0#8*10**(-5)
-            }
-
-            network_settings['file_path'] = layer_to_str(network_settings['layers']) + \
-                                                        '_std=' + str(std) +\
-                                                        '_eta=' + str(network_settings['eta']) +\
-                                                        '_beta=' + str(network_settings['beta']) +\
-                                                        '_delta=' + str(network_settings['min_delta'])
-
-            data.append(network(training, validation, test, network_settings))
-        plot_validation_noise(data, second_hidden_layer, std, layer_to_str(network_settings['layers']))
+    network(training, validation, test, network_settings)
 
 #task431()
 task432()

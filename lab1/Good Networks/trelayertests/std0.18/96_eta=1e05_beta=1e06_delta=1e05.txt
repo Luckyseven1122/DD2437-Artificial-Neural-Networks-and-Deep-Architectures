@@ -1,0 +1,16 @@
+{
+  "layers": [
+    9,
+    6
+  ],
+  "outputs_dim": 1,
+  "beta": 1e-06,
+  "epochs": 1000,
+  "eta": 1e-05,
+  "patience": 8,
+  "min_delta": 1e-05,
+  "file_path": "96_eta=1e-05_beta=1e-06_delta=1e-05",
+  "accuracy": 0.05779142454266548,
+  "training_final_mse": 0.056551934576418716,
+  "validation_final_mse": 0.05681111671987714
+}
