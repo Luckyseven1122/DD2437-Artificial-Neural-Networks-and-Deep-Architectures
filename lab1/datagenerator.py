@@ -192,7 +192,7 @@ def print_menu():
 						 "|                               |\n" + space +
 						 "||-Other: Exit program          |\n" + space +
 						 "|                               |\n" + space +
-						 "'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'\n\n" + bcolors.ENDC +
+						 "'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" + bcolors.ENDC + " " + bcolors.ENDC + "\n\n" +
 						 ">")
 
 	menu_choice = check_numeric(menu_choice)
@@ -306,7 +306,7 @@ def main():
 
 		print_logo()
 
-		menu_choice = print_menu()
+		menu_choice = menu(print_menu())
 
 		print_logo()
 
