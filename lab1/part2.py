@@ -3,7 +3,6 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 print("Tensorflow version",tf.VERSION)
 from decimal import *
-import shutil
 from datagenerator import check_yes_no
 
 
@@ -11,6 +10,11 @@ from datagenerator import check_yes_no
     INSTALL TENSORFLOW:
     pip3 install -r requirements.txt
 '''
+
+plt.ion()
+plt.show()
+inputs = tf.placeholder('float')
+labels = tf.placeholder('float')
 
 def save_file(path):
     if not check_yes_no(input("Store weights? Y/N: \n> ")):
@@ -98,12 +102,16 @@ def generate_data(t_start, t_stop, validation_percentage, std):
     t = np.arange(t_start, t_stop)
     x = mg_time_series(t_stop + 5) # add 5 for labels
 
+    if std > 0:
+        x += np.random.normal(0, std, x.shape)
+
     #plt.plot(t, x[t_start:])
     #plt.show()
 
     inputs = [x[t-20], x[t-15], x[t-10], x[t-5], x[t]]
     inputs = np.asarray(inputs)
     labels = x[t+5]
+
 
     # does any difference?
     #idx = np.random.permutation(inputs.shape[1])
@@ -115,12 +123,18 @@ def generate_data(t_start, t_stop, validation_percentage, std):
     validation_size = int(np.floor(inputs.shape[1] * validation_percentage))
     training_size = inputs.shape[1] - (test_size + validation_size)
 
+    test_inputs  = inputs[:,training_size+validation_size:training_size+validation_size+test_size]
+    test_labels  = labels[training_size+validation_size:training_size+validation_size+test_size]
+
+    #idx = np.random.permutation(training_size+validation_size)
+    #inputs = inputs[:,idx]
+    #labels = labels[idx]
+
     train_inputs = inputs[:,:training_size]
     train_labels = labels[:training_size]
     valid_inputs = inputs[:,training_size:training_size+validation_size]
     valid_labels = labels[training_size:training_size+validation_size]
-    test_inputs  = inputs[:,training_size+validation_size:training_size+validation_size+test_size]
-    test_labels  = labels[training_size+validation_size:training_size+validation_size+test_size]
+
 
     #training = tf.data.Dataset.from_tensors((tf.convert_to_tensor(train_inputs), tf.convert_to_tensor(train_labels)))
     #validation = tf.data.Dataset.from_tensors((tf.convert_to_tensor(valid_inputs), tf.convert_to_tensor(valid_labels)))
@@ -140,20 +154,23 @@ def network(inputs, settings):
     assert settings['beta'] >= 0
 
     layers = []
-    initializer = tf.keras.initializers.he_normal(seed=2)
+    #initializer = tf.keras.initializers.he_normal()
+    initializer = tf.keras.initializers.RandomNormal()
     for idx, nodes in enumerate(settings['layers']):
         # first layer
         prev_nodes = settings['inputs_dim'] if idx == 0 else settings['layers'][idx-1]
         prev_input = inputs if idx == 0 else layers[-1]
-        W = tf.Variable(initializer([prev_nodes, nodes]))
+        W = tf.Variable(initializer([prev_nodes, nodes]), name='weight')
         b = tf.Variable(tf.zeros([nodes]), name='bias')
         layer = tf.add(tf.matmul(prev_input, W), b)
+        layer = tf.matmul(prev_input, W)
         layers.append(tf.nn.tanh(layer))
 
         if idx+1 == len(settings['layers']):
-            W = tf.Variable(initializer([settings['layers'][-1], settings['outputs_dim']]))
+            W = tf.Variable(initializer([settings['layers'][-1], settings['outputs_dim']]), name='weight')
             b = tf.Variable(tf.zeros([settings['outputs_dim']]), name='bias')
-            output = tf.add(tf.matmul(layers[-1], W), b)
+            output = tf.add(tf.matmul(layers[-1], W))
+            output = tf.matmul(layers[-1], W)
             weights = tf.trainable_variables()
             regularization = tf.add_n([ tf.nn.l2_loss(w) for w in weights if 'bias' not in w.name]) * settings['beta']
             return output, regularization
@@ -163,6 +180,7 @@ def network(inputs, settings):
 def train_network(training, validation, test, settings, prediction, optimizer, cost):
     cost_training = []
     cost_validation = []
+    std = []
     assert settings['epochs'] > 0
     assert settings['patience'] > 0
     assert settings['min_delta'] > 0
@@ -174,6 +192,8 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
     patience_counter = 0
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
+
+        writer = tf.summary.FileWriter("./tmp/log", sess.graph)
 
         # Try loading weights
         try:
@@ -198,6 +218,8 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
                 validation_prediction = sess.run(prediction, feed_dict={inputs: validation['inputs']})
                 plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'], settings['mg_time_series'])
 
+
+
             if e > 0 and (cost_validation[e-1] - cost_validation[e]) > settings['min_delta']:
                 patience_counter = 0
             else:
@@ -213,61 +235,65 @@ def train_network(training, validation, test, settings, prediction, optimizer, c
         test_prediction = sess.run(prediction, feed_dict={inputs: test['inputs']})
         training_prediction = sess.run(prediction, feed_dict={inputs: training['inputs']})
         validation_prediction = sess.run(prediction, feed_dict={inputs: validation['inputs']})
+
+        writer.close()
+
     return cost_training, cost_validation, test_prediction, training_prediction, validation_prediction
 
 
+def task431():
+    training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0)
+    network_settings = {
+        # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
+        'layers': [7, 6],
+        'inputs_dim': int(training['inputs'].shape[1]),
+        'outputs_dim': 1,
+        'beta': 0.0000001,
+    }
 
-training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0.03)
+    layer_path_name = ''
+    for l in network_settings['layers']:
+        layer_path_name += str(l)
 
-print(mg_time_series.shape)
-
-
-network_settings = {
-    # [nr nodes in first hidden layer, ... , nr nodes in last hidden layer]
-    'layers': [8],
-    'inputs_dim': int(training['inputs'].shape[1]),
-    'outputs_dim': 1,
-    'beta': 0.001,
-}
-
-layer_path_name = ''
-for l in network_settings['layers']:
-    layer_path_name += str(l)
-
-training_settings = {
-    'mg_time_series': mg_time_series[300:1500],
-    'interactive': True,
-    'epochs': 1000,
-    'eta': 0.0008,
-    'patience': 8,
-    'min_delta': 0.0001,
-    'weights_path': './tmp/' + str(network_settings['inputs_dim']) + \
-                                       layer_path_name + \
-                                       str(network_settings['outputs_dim']) + '_' + \
-                                       str(network_settings['beta'])
-}
+    training_settings = {
+        'mg_time_series': mg_time_series[300:1500],
+        'interactive': True,
+        'epochs': 1000,
+        'eta': 0.0008,
+        'patience': 8,
+        'min_delta': 0.00000005,
+        'weights_path': './tmp/' + str(network_settings['inputs_dim']) + \
+                                           layer_path_name + \
+                                           str(network_settings['outputs_dim']) + '_' + \
+                                           str(network_settings['beta'])
+    }
 
 
-plt.ion()
-plt.show()
-inputs = tf.placeholder('float')
-labels = tf.placeholder('float')
+    prediction, regularization = network(inputs, network_settings)
+    cost = tf.reduce_mean(tf.square(prediction - labels) + tf.sqrt(regularization))
 
-prediction, regularization = network(inputs, network_settings)
-cost = tf.reduce_mean(tf.square(prediction - labels) + tf.sqrt(regularization))
+    optimizer = tf.train.AdamOptimizer(learning_rate=training_settings['eta']).minimize(cost)
+    #optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
+    cost_training, cost_validation, test_prediction, training_prediction, validation_prediction = train_network(training, validation, test, training_settings, prediction, optimizer, cost)
 
-optimizer = tf.train.AdamOptimizer(learning_rate=training_settings['eta']).minimize(cost)
-#optimizer = tf.train.GradientDescentOptimizer(training_settings['eta']).minimize(cost)
-cost_training, cost_validation, test_prediction, training_prediction, validation_prediction = train_network(training, validation, test, training_settings, prediction, optimizer, cost)
+    #plot_time_series(mg_time_series)
+    #plot_cost(cost_training, cost_validation)
+    plt.close('all')
+    plt.ioff()
+    #plot_prediction(test_prediction, test['labels'])
+    #plot_cost(cost_training, cost_validation)
+    #plot_prediction(training_prediction, training['labels'])
+    #plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
 
-#plot_time_series(mg_time_series)
-#plot_cost(cost_training, cost_validation)
-plt.close('all')
-plt.ioff()
-#plot_prediction(test_prediction, test['labels'])
-#plot_cost(cost_training, cost_validation)
-#plot_prediction(training_prediction, training['labels'])
-#plot_all(training_prediction, validation_prediction, test_prediction, training['labels'], validation['labels'], test['labels'])
+    save_file(training_settings['weights_path'])
 
 
-save_file(training_settings['weights_path'])
+def task432():
+
+    std = [0.3, 0.09, 0.18]
+    training, validation, test, mg_time_series = generate_data(300, 1500, 0.3, std=0.3)
+
+
+
+task431()
+#task432()
