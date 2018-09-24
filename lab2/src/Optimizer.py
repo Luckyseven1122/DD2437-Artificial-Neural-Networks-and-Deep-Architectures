@@ -7,19 +7,26 @@ class Optimizer:
         pass
 
     @abstractmethod
-    def train(self):
+    def train(self, fi, Y):
         pass
 
-
+    @abstractmethod
+    def loss(self, fi, w, Y):
+        pass
 
 class LeastSquares(Optimizer):
+    def __name__(self):
+        return 'LeastSquares'
+
     def __init__(self):
         pass
 
-    def train(self, fi, Y):
-        return np.dot(np.linalg.inv(np.dot(fi.T, fi.T)), np.dot(fi.T, Y))
+    def train(self, fi, W, Y):
+        y = np.dot(fi, W)
+        return np.dot(np.linalg.pinv(fi), Y), y
 
-
+    def loss(self, fi, w, Y):
+        return np.linalg.norm(np.dot(fi, w) - Y)**2
 
 def test():
     pass

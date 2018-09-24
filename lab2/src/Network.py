@@ -33,6 +33,8 @@ class Network:
         self.X = X
         self.Y = Y
 
+        self.sigma = sigma
+
         # extract dimensionality information
         self.n_samples = X.shape[0]
         self.M_input_nodes = X.shape[1]
@@ -41,29 +43,30 @@ class Network:
         # Ensure N < n
         assert self.N_hidden_nodes < self.n_samples
 
+        self.fi = None
+        self.centroids = centroids
         self.linear_weights = initializer.new((self.N_hidden_nodes, 1))
 
 
-    def _transfer_function(self, x, mu, sigma):
-        return np.exp((-(x-mu)**2)/(2*sigma**2))
-
-    def _calculate_fi(self):
-        for row in range(self.N_hidden_nodes):
-
+        # Metrics placement
+        self.training_loss = []
+        self.validation_loss = []
 
     def train(self, epochs, optimizer=None):
-        assert optimizer != None
-
-
-        self.linear_weights = centroids.calculate_fi()
+        self.optimizer = optimizer
+        self.fi = self.centroids.get_fi(self.X, self.sigma)
 
         for e in range(epochs):
+            self.linear_weights, f = optimizer.train(self.fi, self.linear_weights, self.Y)
+            loss = optimizer.loss(self.fi, self.linear_weights, self.Y)
+            print('loss:', loss, 'Residual error:', np.mean(np.abs(f-self.Y)))
+            self.training_loss.append(loss)
 
-
-        # initialize radius centroids weights
-
-
-
+    def predict(self, X, Y):
+        fi = self.centroids.get_fi(X, self.sigma)
+        _, y = self.optimizer.train(fi, self.linear_weights, Y)
+        residual = np.mean(np.abs(y-Y))
+        return np.dot(fi, self.linear_weights), residual
 
 def test():
 
