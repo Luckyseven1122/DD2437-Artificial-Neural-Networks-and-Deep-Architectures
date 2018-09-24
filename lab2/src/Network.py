@@ -1,5 +1,6 @@
 import numpy as np
 from .Initializer import Initializer
+from .Centroids import Fixed
 
 '''
     Input Layer : Size of the input layer determined by the dimensionality of the input.
@@ -26,9 +27,8 @@ from .Initializer import Initializer
 
 
 class Network:
-    def __init__(self, X, Y, hidden_nodes, sigma=1.0, initializer=None):
+    def __init__(self, X, Y, hidden_nodes, sigma=1.0, centroids=None, initializer=None):
         assert X.shape[0] == Y.shape[0]
-        assert initializer != None
 
         self.X = X
         self.Y = Y
@@ -41,11 +41,11 @@ class Network:
         # Ensure N < n
         assert self.N_hidden_nodes < self.n_samples
 
-        self.centroid_weights = initializer.new((self.N_hidden_nodes, self.M_input_nodes))
-        self.linear_weights = initializer.new((self.N_hidden_nodes, 1))
+        self.centroid_matrix = centroids.initialize()
+        self.linear_weights = initializer.new((self.N_hidden_nodes, self.M_input_nodes))
 
 
-    def _transfer_function(self):
+    def _transfer_function(self, x, mu, sigma):
         pass
 
     def _compute_gaussian_matrix(self):

@@ -9,7 +9,6 @@ class Initializer:
     def new(self, shape):
         pass
 
-
 class RandomNormal(Initializer):
     def new(self, shape):
         return np.random.normal(0, 0.1, shape)
