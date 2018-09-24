@@ -30,8 +30,8 @@ def generate_data_task31(func):
 training, testing = generate_data_task31(np.sin)
 rbf_nodes, n_nodes = get_radial_coordinates(1)
 
-plt.plot(training['X'], training['Y'])
-plt.show()
+#plt.plot(training['X'], training['Y'])
+#plt.show()
 
 
 

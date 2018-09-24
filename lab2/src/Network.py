@@ -41,18 +41,24 @@ class Network:
         # Ensure N < n
         assert self.N_hidden_nodes < self.n_samples
 
-        self.centroid_matrix = centroids.initialize()
-        self.linear_weights = initializer.new((self.N_hidden_nodes, self.M_input_nodes))
+        self.linear_weights = initializer.new((self.N_hidden_nodes, 1))
 
 
     def _transfer_function(self, x, mu, sigma):
-        pass
+        return np.exp((-(x-mu)**2)/(2*sigma**2))
 
-    def _compute_gaussian_matrix(self):
-        pass
+    def _calculate_fi(self):
+        for row in range(self.N_hidden_nodes):
+
 
     def train(self, epochs, optimizer=None):
         assert optimizer != None
+
+
+        self.linear_weights = centroids.calculate_fi()
+
+        for e in range(epochs):
+
 
         # initialize radius centroids weights
 
