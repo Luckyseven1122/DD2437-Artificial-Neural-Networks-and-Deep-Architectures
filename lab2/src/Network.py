@@ -1,4 +1,5 @@
 import numpy as np
+import json
 from .Initializer import Initializer
 from .Centroids import Fixed
 
@@ -45,6 +46,7 @@ class Network:
         self.centroids = centroids
         self.linear_weights = initializer.new((self.N_hidden_nodes, 1))
         self.optimizer = None
+        self.initializer = initializer
 
         # Metrics placement
         self.training_loss = []
@@ -55,15 +57,19 @@ class Network:
         pack data for analysis.
         '''
         data = {
-            'n': self.n_samples,
-            'M': self.M_input_nodes,
-            'N': self.N_hidden_nodes,
+            'config': json.dumps({'config': {
+                'n samples': self.n_samples,
+                'M input nodes': self.M_input_nodes,
+                'N hidden nodes': self.N_hidden_nodes,
+                'sigma': self.sigma,
+                'learning rule': self.optimizer.__name__ if self.optimizer != None else 'No optimizer',
+                'initializer': self.initializer.__name__ if self.initializer != None else 'No initializer',
+                'epochs': epochs,
+            }}, indent=2),
             't_loss': self.training_loss,
-            'v_loss': self.validation_loss,
-            'sigma': self.sigma,
-            'l_rule': self.optimizer.__name__ if self.optimizer != None else 'no optimizer',
-            'epochs': epochs,
+            'v_loss': self.validation_loss,            
         }
+
         return data
 
     def train(self, epochs, optimizer):
@@ -82,7 +88,6 @@ class Network:
             self.training_loss.append(loss)
             print('loss:', loss)
         return self._pack_data_object(epochs)
-
 
 
     def predict(self, X, Y):

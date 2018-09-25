@@ -26,13 +26,13 @@ class LeastSquares(Optimizer):
         return np.dot(np.linalg.pinv(fi), Y)
 
     def loss(self, fi, W, Y):
-        return np.linalg.norm(np.dot(fi, W) - Y)**2
+        return float(np.linalg.norm(np.dot(fi, W) - Y)**2)
 
 
 class DeltaRule(Optimizer):
     def __init__(self, eta):
         self.eta = eta
-        self.__name__ = 'DeltaRule'
+        self.__name__ = 'DeltaRule(eta=' + str(eta) + ')'
 
     def train(self, fi, W, Y):
         fi = fi.reshape(-1, 1)
@@ -45,7 +45,7 @@ class DeltaRule(Optimizer):
         '''
         fi = fi.reshape(-1, 1)
         y = np.dot(fi.T, W)
-        return ((Y-y)**2)/2
+        return float((((Y-y)**2)/2))
 
 
 def test():

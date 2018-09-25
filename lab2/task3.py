@@ -5,6 +5,7 @@ from src.Optimizer import LeastSquares, DeltaRule
 from src.Initializer import RandomNormal
 from src.Centroids import Fixed
 
+
 def square(x):
     '''
     pass y = sin(2x)
@@ -79,15 +80,13 @@ def task32():
                                  sigma=0.1,
                                  hidden_nodes=N_hidden_nodes,
                                  centroids=Fixed(rbf_nodes),
-                                 initializer=RandomNormal())
+                                 initializer=RandomNormal(std=0.1))
 
-    RadialBasisNetwork.train(epochs=1000,
-                             optimizer=DeltaRule(eta=0.1))
+    data = RadialBasisNetwork.train(epochs=1000,
+                                    optimizer=DeltaRule(eta=0.1))
 
     prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
 
-
-    print('N_hidden_nodes:',N_hidden_nodes)
     print('residual_error', residual_error)
     plt.plot(testing['X'], testing['Y'], label='True')
     plt.plot(testing['X'], prediction, label='Prediction')
@@ -97,6 +96,8 @@ def task32():
     plt.scatter(rbf_nodes, np.zeros(rbf_nodes.size))
     plt.legend()
     plt.show()
+
+    print(data['config'])
 
 
 
