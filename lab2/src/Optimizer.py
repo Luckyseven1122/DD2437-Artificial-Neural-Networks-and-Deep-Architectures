@@ -15,11 +15,8 @@ class Optimizer:
         pass
 
 class LeastSquares(Optimizer):
-    def __name__(self):
-        return 'LeastSquares'
-
     def __init__(self):
-        pass
+        self.__name__ = 'LeastSquares'
 
     def train(self, fi, W, Y):
         y = np.dot(fi, W)
@@ -27,6 +24,18 @@ class LeastSquares(Optimizer):
 
     def loss(self, fi, w, Y):
         return np.linalg.norm(np.dot(fi, w) - Y)**2
+
+class DeltaRule(Optimizer):
+    def __init__(self, eta):
+        self.eta = eta
+        self.__name__ = 'DeltaRule'
+
+    def train(self, fi, w, Y):
+
+        pass
+
+    def loss(delf, fi, w, Y):
+        pass
 
 def test():
     pass

@@ -24,8 +24,6 @@ from .Centroids import Fixed
 '''
 
 
-
-
 class Network:
     def __init__(self, X, Y, hidden_nodes, sigma=1.0, centroids=None, initializer=None):
         assert X.shape[0] == Y.shape[0]
@@ -47,7 +45,6 @@ class Network:
         self.centroids = centroids
         self.linear_weights = initializer.new((self.N_hidden_nodes, 1))
 
-
         # Metrics placement
         self.training_loss = []
         self.validation_loss = []
@@ -56,11 +53,13 @@ class Network:
         self.optimizer = optimizer
         self.fi = self.centroids.get_fi(self.X, self.sigma)
 
+        batch_idx = [self.n_samples] if self.optimizer.__name__ == 'LeastSquares' else list(range(0,self.n_samples))
         for e in range(epochs):
-            self.linear_weights, f = optimizer.train(self.fi, self.linear_weights, self.Y)
-            loss = optimizer.loss(self.fi, self.linear_weights, self.Y)
-            print('loss:', loss, 'Residual error:', np.mean(np.abs(f-self.Y)))
-            self.training_loss.append(loss)
+            for batch in batch_idx:
+                self.linear_weights, f = optimizer.train(self.fi, self.linear_weights, self.Y)
+                loss = optimizer.loss(self.fi, self.linear_weights, self.Y)
+                print('loss:', loss, 'Residual error:', np.mean(np.abs(f-self.Y)))
+                self.training_loss.append(loss)
 
     def predict(self, X, Y):
         fi = self.centroids.get_fi(X, self.sigma)
