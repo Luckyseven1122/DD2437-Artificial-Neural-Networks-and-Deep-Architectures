@@ -87,7 +87,6 @@ def task32():
     prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
 
 
-
     print('N_hidden_nodes:',N_hidden_nodes)
     print('residual_error', residual_error)
     plt.plot(testing['X'], testing['Y'], label='True')

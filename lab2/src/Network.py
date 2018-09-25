@@ -44,13 +44,32 @@ class Network:
         self.fi = None
         self.centroids = centroids
         self.linear_weights = initializer.new((self.N_hidden_nodes, 1))
+        self.optimizer = None
 
         # Metrics placement
         self.training_loss = []
         self.validation_loss = []
 
-    def train(self, epochs, optimizer=None):
+    def _pack_data_object(self, epochs):
+        '''
+        pack data for analysis.
+        '''
+        data = {
+            'n': self.n_samples,
+            'M': self.M_input_nodes,
+            'N': self.N_hidden_nodes,
+            't_loss': self.training_loss,
+            'v_loss': self.validation_loss,
+            'sigma': self.sigma,
+            'l_rule': self.optimizer.__name__ if self.optimizer != None else 'no optimizer',
+            'epochs': epochs,
+        }
+        return data
+
+    def train(self, epochs, optimizer):
         self.optimizer = optimizer
+        self.epochs = epochs
+
         self.fi = self.centroids.get_fi(self.X, self.sigma)
 
         # Adjust batch for sample or batch learning based on optimizer
@@ -62,12 +81,16 @@ class Network:
                 loss += optimizer.loss(self.fi[batch,:], self.linear_weights, self.Y[batch,:])
             self.training_loss.append(loss)
             print('loss:', loss)
+        return self._pack_data_object(epochs)
+
+
 
     def predict(self, X, Y):
         pred_fi = self.centroids.get_fi(X, self.sigma)
         prediction = self.optimizer.output(pred_fi, self.linear_weights)
         residual = np.mean(np.abs(prediction-Y))
         return prediction, residual
+
 
 def test():
 

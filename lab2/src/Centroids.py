@@ -23,6 +23,10 @@ class Centroids:
 
 class Fixed(Centroids):
     def __init__(self, matrix):
+        super().__init__(matrix)
+        self.__name__ = 'Fixed'
+
+    def __init__(self, matrix):
         Centroids.__init__(self, matrix)
 
     def get_fi(self, X, sigma):
