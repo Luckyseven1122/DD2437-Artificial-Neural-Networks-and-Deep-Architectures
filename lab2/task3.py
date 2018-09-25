@@ -19,10 +19,10 @@ def get_radial_coordinates():
                   [7*np.pi/4]]).T
     '''
     # Used for square(sin(2x))
-    m = np.array([[ 1.4, 2.6, 3.4, 5.3]])
+    #m = np.array([[ 1.4, 2.6, 3.4, 5.3]])
 
     # used for sin(2x)
-    #m = np.arange(0.01, 2*np.pi - 0.01, 0.105).reshape(-1,1).T
+    m = np.arange(0.01, 2*np.pi - 0.01, 0.105).reshape(-1,1).T
     return m, m.shape[1]
 
 def generate_data_task31(func, noise_std):
@@ -43,8 +43,8 @@ def generate_data_task31(func, noise_std):
 
 
 def task31():
-    #training, testing = generate_data_task31(lambda x:np.sin(x), 0.1)
-    training, testing = generate_data_task31(lambda x:square(np.sin(x)), 0.1)
+    training, testing = generate_data_task31(lambda x:np.sin(x), 0)
+    #training, testing = generate_data_task31(lambda x:square(np.sin(x)), 0.1)
     rbf_nodes, N_hidden_nodes = get_radial_coordinates()
 
     RadialBasisNetwork = Network(X=training['X'],
@@ -71,34 +71,36 @@ def task31():
 
 
 def task32():
-    training, testing = generate_data_task31(lambda x:square(np.sin(x)), 0.1)
+    training, testing = generate_data_task31(lambda x:np.sin(x), 0)
     rbf_nodes, N_hidden_nodes = get_radial_coordinates()
 
     RadialBasisNetwork = Network(X=training['X'],
                                  Y=training['Y'],
-                                 sigma=1.0,
+                                 sigma=0.1,
                                  hidden_nodes=N_hidden_nodes,
                                  centroids=Fixed(rbf_nodes),
                                  initializer=RandomNormal())
 
-    RadialBasisNetwork.train(epochs=1,
+    RadialBasisNetwork.train(epochs=1000,
                              optimizer=DeltaRule(eta=0.1))
 
     prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
 
-    '''
+
+
     print('N_hidden_nodes:',N_hidden_nodes)
     print('residual_error', residual_error)
     plt.plot(testing['X'], testing['Y'], label='True')
     plt.plot(testing['X'], prediction, label='Prediction')
-    plt.ylabel('sign(sin(2x))')
+    #plt.ylabel('sign(sin(2x))')
+    plt.ylabel('sin(2x)')
     plt.xlabel('x')
     plt.scatter(rbf_nodes, np.zeros(rbf_nodes.size))
     plt.legend()
     plt.show()
-    '''
 
 
 
-task31()
-#task32()
+
+#task31()
+task32()

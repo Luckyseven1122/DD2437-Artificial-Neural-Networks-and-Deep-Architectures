@@ -53,19 +53,21 @@ class Network:
         self.optimizer = optimizer
         self.fi = self.centroids.get_fi(self.X, self.sigma)
 
-        batch_idx = [self.n_samples] if self.optimizer.__name__ == 'LeastSquares' else list(range(0,self.n_samples))
+        # Adjust batch for sample or batch learning based on optimizer
+        batch_idx = [np.arange(0, self.n_samples)] if self.optimizer.__name__ == 'LeastSquares' else list(range(0,self.n_samples))
         for e in range(epochs):
+            loss = 0
             for batch in batch_idx:
-                self.linear_weights, f = optimizer.train(self.fi, self.linear_weights, self.Y)
-                loss = optimizer.loss(self.fi, self.linear_weights, self.Y)
-                print('loss:', loss, 'Residual error:', np.mean(np.abs(f-self.Y)))
-                self.training_loss.append(loss)
+                self.linear_weights = optimizer.train(self.fi[batch,:], self.linear_weights, self.Y[batch,:])
+                loss += optimizer.loss(self.fi[batch,:], self.linear_weights, self.Y[batch,:])
+            self.training_loss.append(loss)
+            print('loss:', loss)
 
     def predict(self, X, Y):
-        fi = self.centroids.get_fi(X, self.sigma)
-        _, y = self.optimizer.train(fi, self.linear_weights, Y)
-        residual = np.mean(np.abs(y-Y))
-        return np.dot(fi, self.linear_weights), residual
+        pred_fi = self.centroids.get_fi(X, self.sigma)
+        prediction = self.optimizer.output(pred_fi, self.linear_weights)
+        residual = np.mean(np.abs(prediction-Y))
+        return prediction, residual
 
 def test():
 

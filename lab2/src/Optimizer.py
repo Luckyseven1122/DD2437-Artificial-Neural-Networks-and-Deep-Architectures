@@ -11,31 +11,42 @@ class Optimizer:
         pass
 
     @abstractmethod
-    def loss(self, fi, w, Y):
+    def loss(self, fi, W, Y):
         pass
+
+    def output(self, fi, W):
+        return np.dot(fi, W)
+
 
 class LeastSquares(Optimizer):
     def __init__(self):
         self.__name__ = 'LeastSquares'
 
     def train(self, fi, W, Y):
-        y = np.dot(fi, W)
-        return np.dot(np.linalg.pinv(fi), Y), y
+        return np.dot(np.linalg.pinv(fi), Y)
 
-    def loss(self, fi, w, Y):
-        return np.linalg.norm(np.dot(fi, w) - Y)**2
+    def loss(self, fi, W, Y):
+        return np.linalg.norm(np.dot(fi, W) - Y)**2
+
 
 class DeltaRule(Optimizer):
     def __init__(self, eta):
         self.eta = eta
         self.__name__ = 'DeltaRule'
 
-    def train(self, fi, w, Y):
+    def train(self, fi, W, Y):
+        fi = fi.reshape(-1, 1)
+        delta_W = self.eta * (Y - np.dot(fi.T, W)) * fi
+        return W + delta_W
 
-        pass
+    def loss(delf, fi, W, Y):
+        '''
+        Instantanious error for X_k
+        '''
+        fi = fi.reshape(-1, 1)
+        y = np.dot(fi.T, W)
+        return ((Y-y)**2)/2
 
-    def loss(delf, fi, w, Y):
-        pass
 
 def test():
     pass
