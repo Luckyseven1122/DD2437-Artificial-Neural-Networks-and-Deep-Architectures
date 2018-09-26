@@ -5,7 +5,7 @@ from src.Optimizer import LeastSquares, DeltaRule
 from src.Initializer import RandomNormal
 from src.Centroids import Fixed
 from src.Plotter import plot_centroids_1d
-
+from src.Perceptron import Perceptron
 
 def square(x):
     '''
@@ -119,8 +119,11 @@ def task32():
 
             print(data['config'])
 
-
-
+def perceptron():
+    training, testing = generate_data_task31(lambda x:np.sin(x), 0)
+    rbf_nodes, N_hidden_nodes = get_radial_coordinates()
+    eta = 0.000001
+    w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], Ww = rbf_nodes, epochs = 1000)
 
 #task31()
-task32()
+# task32()
