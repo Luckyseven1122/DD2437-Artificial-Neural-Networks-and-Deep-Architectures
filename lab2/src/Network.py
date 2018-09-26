@@ -29,8 +29,8 @@ class Network:
     def __init__(self, X, Y, hidden_nodes, sigma=1.0, centroids=None, initializer=None):
         assert X.shape[0] == Y.shape[0]
 
-        self.X = X
-        self.Y = Y
+        self.X = X.copy()
+        self.Y = Y.copy()
 
         self.sigma = sigma
 
@@ -65,6 +65,7 @@ class Network:
                 'learning rule': self.optimizer.__name__ if self.optimizer != None else 'No optimizer',
                 'initializer': self.initializer.__name__ if self.initializer != None else 'No initializer',
                 'epochs': epochs,
+                'epoch_shuffle': self.epoch_shuffle
             }}, indent=2),
             't_loss': self.training_loss,
             'v_loss': self.validation_loss,
@@ -72,9 +73,10 @@ class Network:
 
         return data
 
-    def train(self, epochs, optimizer):
+    def train(self, epochs, optimizer, epoch_shuffle=False):
         self.optimizer = optimizer
         self.epochs = epochs
+        self.epoch_shuffle = epoch_shuffle
 
         self.fi = self.centroids.get_fi(self.X, self.sigma)
 
@@ -82,6 +84,12 @@ class Network:
         batch_idx = [np.arange(0, self.n_samples)] if self.optimizer.__name__ == 'LeastSquares' else list(range(0,self.n_samples))
         for e in range(epochs):
             loss = 0
+
+            if epoch_shuffle:
+                idx = np.random.permutation(np.arange(self.n_samples))
+                self.X = self.X[idx]
+                #self.Y = self.Y[idx] # used or no?
+
             for batch in batch_idx:
                 self.linear_weights = optimizer.train(self.fi[batch,:], self.linear_weights, self.Y[batch,:])
                 loss += optimizer.loss(self.fi[batch,:], self.linear_weights, self.Y[batch,:])
