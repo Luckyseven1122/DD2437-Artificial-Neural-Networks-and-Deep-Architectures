@@ -88,7 +88,10 @@ class Network:
             if epoch_shuffle:
                 idx = np.random.permutation(np.arange(self.n_samples))
                 self.X = self.X[idx]
-                #self.Y = self.Y[idx] # used or no?
+                self.Y = self.Y[idx] # used or no?
+
+            if self.centroids.is_unsupervised():
+                self.fi = self.centroids.update(self.X, self.sigma, eta=0.1)
 
             for batch in batch_idx:
                 self.linear_weights = optimizer.train(self.fi[batch,:], self.linear_weights, self.Y[batch,:])

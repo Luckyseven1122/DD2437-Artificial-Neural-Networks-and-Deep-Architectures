@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from src.Network import Network
 from src.Optimizer import LeastSquares, DeltaRule
 from src.Initializer import RandomNormal
-from src.Centroids import Fixed
+from src.Centroids import Fixed, SimpleCL
 from src.Plotter import plot_centroids_1d
 from src.Perceptron import Perceptron
 
@@ -71,7 +71,7 @@ def generate_data_task31(func, noise_std):
 
 
 def task31():
-    training, testing = generate_data_task31(lambda x:square(np.sin(x)), 0)
+    training, testing, _ = generate_data_task31(lambda x:square(np.sin(x)), 0)
     #training, testing = generate_data_task31(lambda x:square(np.sin(x)), 0.1)
     rbf_nodes = get_radial_coordinates(0)
     centroids = Fixed(rbf_nodes['nodes'])
@@ -145,6 +145,50 @@ def task32():
             print(data['config'])
             save_data(data['config'] + '\n\nresidual error (noisy)=' + str(residual_error_noisy) + '\nresidual error clean=' + str(residual_error_clean) , path + '.txt')
 
+def task33():
+    training, testing, testing_clean = generate_data_task31(lambda x:np.sin(x), 0.1)
+
+    sigma = [0.1, 0.3, 0.5, 1.0, 1.3]
+    tests = [1, 2, 3, 4] # weak, tighter, random
+
+    N_hidden_nodes = 6
+    centroids = SimpleCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi])
+
+
+    RadialBasisNetwork = Network(X=training['X'],
+                                 Y=training['Y'],
+                                 sigma=1.0,
+                                 hidden_nodes=N_hidden_nodes,
+                                 centroids=centroids,
+                                 initializer=RandomNormal(std=0.1))
+
+    data = RadialBasisNetwork.train(epochs=1000,
+                                    epoch_shuffle=True,
+                                    #optimizer=LeastSquares())
+                                    optimizer=DeltaRule(eta=0.001))
+
+    prediction_noisy, residual_error_noisy = RadialBasisNetwork.predict(testing['X'], testing['Y'])
+    prediction_clean, residual_error_clean = RadialBasisNetwork.predict(testing_clean['X'], testing_clean['Y'])
+
+    print('residual error', residual_error_clean)
+    print('residual error (noisy)', residual_error_noisy)
+    plt.clf()
+    plt.plot(testing['X'], testing['Y'], label='True')
+    plt.plot(testing['X'], prediction_noisy, label='Prediction (noise)')
+    #plt.plot(testing_clean['X'], prediction_clean, label='Prediction (no noise)')
+    #plt.ylabel('sign(sin(2x))')
+    plt.ylabel('sin(2x)')
+    plt.xlabel('x')
+    #plt.scatter(N_hidden_nodes, np.zeros(N_hidden_nodes))
+    plt.legend(loc='upper right')
+    plot_centroids_1d(centroids,1.0)
+    plt.show()
+
+    path = './figures/task3.2/sin(2x)_sig=' + str(1.0) + '_set=' + 'SimpleCL'
+    #plt.savefig(path + '.png')
+    print(data['config'])
+    #save_data(data['config'] + '\n\nresidual error (noisy)=' + str(residual_error_noisy) + '\nresidual error clean=' + str(residual_error_clean) , path + '.txt')
+
 def perceptron():
     training, testing = generate_data_task31(lambda x:np.sin(x), 0)
     rbf_nodes, N_hidden_nodes = get_radial_coordinates(1)
@@ -158,5 +202,5 @@ def perceptron():
 
 # perceptron()
 #task31()
-task32()
 #task32()
+task33()
