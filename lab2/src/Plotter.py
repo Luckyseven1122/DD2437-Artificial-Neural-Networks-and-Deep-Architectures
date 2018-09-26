@@ -13,12 +13,8 @@ def gauss(x,y,Sigma,mu):
 
 def plot_centroids_1d(centroids, sigma):
     c = centroids.get_matrix()
-    print("Matrix of centroids - dimensons: ", c)
-    print(c)
-
     fig = plt.gcf()
     ax = fig.gca()
-
     x_coords = c[0]
     for x in x_coords:
         circle = plt.Circle((x, 0), sigma, color='r')
