@@ -67,7 +67,7 @@ class Network:
                 'epochs': epochs,
             }}, indent=2),
             't_loss': self.training_loss,
-            'v_loss': self.validation_loss,            
+            'v_loss': self.validation_loss,
         }
 
         return data
