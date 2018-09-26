@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from src.Network import Network
 from src.Optimizer import LeastSquares, DeltaRule
 from src.Initializer import RandomNormal
-from src.Centroids import Fixed, SimpleCL
+from src.Centroids import Fixed, VanillaCL
 from src.Plotter import plot_centroids_1d
 from src.Perceptron import Perceptron
 

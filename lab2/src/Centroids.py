@@ -57,13 +57,13 @@ class Fixed(Centroids):
     def update(self, X, sigma):
         pass
 
-class SimpleCL(Centroids):
+class VanillaCL(Centroids):
     def __init__(self, matrix, space=[-2, 2]):
         matrix = np.random.uniform(space[0], space[1], size=(matrix.shape))
         super().__init__(matrix, update=True)
         #self._c = 0
         #self._normalize_matrix()
-        self.__name__ = 'SimpleCL'
+        self.__name__ = 'VanillaCL'
 
     def get_fi(self, X, sigma):
         return self._calculate_fi(X, sigma)
@@ -78,4 +78,27 @@ class SimpleCL(Centroids):
         #plt.savefig('./figures/task3.3/' + str(self._c) + '.png')
         #self._c += 1
         #self._normalize_matrix()
+        return self._calculate_fi(X, sigma)
+
+
+class LeakyCL(Centroids):
+    def __init__(self, matrix, space=[-2, 2]):
+        matrix = np.random.uniform(space[0], space[1], size=(matrix.shape))
+        super().__init__(matrix, update=True)
+        #self._c = 0
+        #self._normalize_matrix()
+        self.__name__ = 'VanillaCL'
+
+    def get_fi(self, X, sigma):
+        return self._calculate_fi(X, sigma)
+
+    def update(self, X, sigma, eta):
+        sample = X[np.random.randint(0, X.shape[0]),:].reshape(-1,1) # MIGHT FUCK THINGS UP! .shape(-1,1)??
+        idx = self._find_closest_RBF_unit_index(sample)
+
+        ## TODO: add some update to all nodes
+        # Idea: Return distance d (shape = (1, N) ) array for each point.
+        # dW = eta * (normalize(d) + 1) * (sample - matrix)
+        self._matrix[:,idx,None] += eta*(sample - self._matrix[:,idx].reshape(-1,1))
+
         return self._calculate_fi(X, sigma)
