@@ -23,6 +23,9 @@ def get_radial_coordinates(arg):
     q = np.pi/16
     # Test 1
 
+    if arg == 0:
+        m = np.array([[1.4,2.6,3.4,5.3]])
+
     if arg == 1:
         m = np.array([[q*1, q*7, q*9, q*15, q*17, q*23, q*25, q*31]])
 
@@ -52,15 +55,17 @@ def generate_data_task31(func, noise_std):
 
 
 def task31():
-    training, testing = generate_data_task31(lambda x:np.sin(x), 0)
+    training, testing = generate_data_task31(lambda x:square(np.sin(x)), 0)
     #training, testing = generate_data_task31(lambda x:square(np.sin(x)), 0.1)
-    rbf_nodes, N_hidden_nodes = get_radial_coordinates()
+    rbf_nodes, N_hidden_nodes = get_radial_coordinates(0)
+    centroids = Fixed(rbf_nodes)
+    sigma = 1.0
 
     RadialBasisNetwork = Network(X=training['X'],
                                 Y=training['Y'],
-                                sigma=1.0,
+                                sigma=sigma,
                                 hidden_nodes=N_hidden_nodes,
-                                centroids=Fixed(rbf_nodes),
+                                centroids=centroids,
                                 initializer=RandomNormal())
 
     RadialBasisNetwork.train(epochs=1,
@@ -72,11 +77,12 @@ def task31():
     print('N_hidden_nodes:',N_hidden_nodes)
     print('residual_error', residual_error)
     plt.plot(testing['X'], testing['Y'], label='True')
-    plt.plot(testing['X'], prediction, label='Prediction')
+    plt.plot(testing['X'], np.where(prediction >= 0, 1, -1), label='Prediction')
     plt.ylabel('sign(sin(2x))')
     plt.xlabel('x')
     plt.scatter(rbf_nodes, np.zeros(rbf_nodes.size))
     plt.legend()
+    plot_centroids_1d(centroids, sigma)
     plt.show()
 
 
@@ -126,4 +132,4 @@ def perceptron():
     w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], Ww = rbf_nodes, epochs = 1000)
 
 #task31()
-# task32()
+task32()
