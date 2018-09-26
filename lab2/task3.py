@@ -4,6 +4,7 @@ from src.Network import Network
 from src.Optimizer import LeastSquares, DeltaRule
 from src.Initializer import RandomNormal
 from src.Centroids import Fixed
+from src.Perceptron import Perceptron
 
 
 def square(x):
@@ -20,10 +21,10 @@ def get_radial_coordinates():
                   [7*np.pi/4]]).T
     '''
     # Used for square(sin(2x))
-    #m = np.array([[ 1.4, 2.6, 3.4, 5.3]])
+    m = np.array([[ 1.4, 2.6, 3.4, 5.3]])
 
     # used for sin(2x)
-    m = np.arange(0.01, 2*np.pi - 0.01, 0.105).reshape(-1,1).T
+    # m = np.arange(0.01, 2*np.pi - 0.01, 0.105).reshape(-1,1).T
     return m, m.shape[1]
 
 def generate_data_task31(func, noise_std):
@@ -99,8 +100,14 @@ def task32():
 
     print(data['config'])
 
+def perceptron():
+
+    training, testing = generate_data_task31(lambda x:np.sin(x), 0)
+    rbf_nodes, N_hidden_nodes = get_radial_coordinates()
+    eta = 0.000001
+    w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], Ww = rbf_nodes, epochs = 1000)
 
 
 
 #task31()
-task32()
+# task32()
