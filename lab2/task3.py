@@ -44,12 +44,19 @@ def get_radial_coordinates(arg):
         m = 2*np.pi * np.random.rand(1,8)
         name = 'random'
 
+    if arg == 4:
+        m = np.arange(0, 2*np.pi, 0.4).reshape(-1,1).T
+        name = 'generated'
+
     return {'nodes': m, 'N': m.shape[1], 'name': name}
 
 def generate_data_task31(func, noise_std):
 
     X = np.arange(0, 2*np.pi, 0.01).reshape(-1,1)
     Y = func(2*X)
+
+    test_X_clean = X[5::10].copy()
+    test_Y_clean = Y[5::10].copy()
 
     if noise_std > 0:
         Y += np.random.normal(0, noise_std, Y.shape)
@@ -60,7 +67,7 @@ def generate_data_task31(func, noise_std):
     test_X = X[5::10].copy()
     test_Y = Y[5::10].copy()
 
-    return {'X': train_X, 'Y': train_Y}, {'X': test_X, 'Y': test_Y}
+    return {'X': train_X, 'Y': train_Y}, {'X': test_X, 'Y': test_Y}, {'X': test_X_clean, 'Y': test_Y_clean}
 
 
 def task31():
@@ -94,10 +101,10 @@ def task31():
 
 
 def task32():
-    training, testing = generate_data_task31(lambda x:np.sin(x), 0.1)
+    training, testing, testing_clean = generate_data_task31(lambda x:np.sin(x), 0.1)
 
-    sigma = np.arange(0.05, 1.4, 0.3)
-    tests = [1, 2, 3] # weak, tighter, random
+    sigma = [0.1, 0.3, 0.5, 1.0, 1.3]
+    tests = [1, 2, 3, 4] # weak, tighter, random
 
     for t in tests:
         rbf_nodes = get_radial_coordinates(t)
@@ -112,34 +119,40 @@ def task32():
                                          centroids=centroids,
                                          initializer=RandomNormal(std=0.1))
 
-            data = RadialBasisNetwork.train(epochs=20,
-                                            epoch_shuffle=True,
+            data = RadialBasisNetwork.train(epochs=1,
+                                            epoch_shuffle=False,
                                             #optimizer=LeastSquares())
                                             optimizer=DeltaRule(eta=0.1))
 
-            prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
+            prediction_noisy, residual_error_noisy = RadialBasisNetwork.predict(testing['X'], testing['Y'])
+            prediction_clean, residual_error_clean = RadialBasisNetwork.predict(testing_clean['X'], testing_clean['Y'])
 
-            print('residual_error', residual_error)
+            print('residual error', residual_error_clean)
+            print('residual error (noisy)', residual_error_noisy)
             plt.clf()
             plt.plot(testing['X'], testing['Y'], label='True')
-            plt.plot(testing['X'], prediction, label='Prediction')
+            plt.plot(testing['X'], prediction_noisy, label='Prediction (noise)')
+            #plt.plot(testing_clean['X'], prediction_clean, label='Prediction (no noise)')
             #plt.ylabel('sign(sin(2x))')
             plt.ylabel('sin(2x)')
             plt.xlabel('x')
             plt.scatter(rbf_nodes['nodes'], np.zeros(rbf_nodes['nodes'].size))
-            plt.legend()
+            plt.legend(loc='upper right')
             plot_centroids_1d(centroids,sig)
 
             path = './figures/task3.2/sin(2x)_sig=' + str(sig) + '_set=' + rbf_nodes['name']
             plt.savefig(path + '.png')
             print(data['config'])
-            save_data(data['config'] + '\n\n' + str(residual_error), path + '.txt')
+            save_data(data['config'] + '\n\nresidual error (noisy)=' + str(residual_error_noisy) + '\nresidual error clean=' + str(residual_error_clean) , path + '.txt')
 
 def perceptron():
     training, testing = generate_data_task31(lambda x:np.sin(x), 0)
-    rbf_nodes, N_hidden_nodes = get_radial_coordinates()
+    rbf_nodes = get_radial_coordinates(1)
     eta = 0.000001
-    w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], Ww = rbf_nodes, epochs = 1000)
+    w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], W = rbf_nodes['nodes'], epochs = 1000)
 
-task31()
-#task32()
+
+#task31()
+task32()
+
+#perceptron()
