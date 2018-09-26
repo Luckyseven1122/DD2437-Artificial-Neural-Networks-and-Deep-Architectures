@@ -86,8 +86,10 @@ def task32():
     tests = [1, 2, 3] # weak, tighter, random
 
     for t in tests:
-        rbf_nodes, N_hidden_nodes = get_radial_coordinates()
+        rbf_nodes, N_hidden_nodes = get_radial_coordinates(t)
         for sig in sigma:
+
+
             RadialBasisNetwork = Network(X=training['X'],
                                          Y=training['Y'],
                                          sigma=sig,
