@@ -119,10 +119,10 @@ def task32():
                                          centroids=centroids,
                                          initializer=RandomNormal(std=0.1))
 
-            data = RadialBasisNetwork.train(epochs=1,
-                                            epoch_shuffle=False,
+            data = RadialBasisNetwork.train(epochs=10000,
+                                            epoch_shuffle=True,
                                             #optimizer=LeastSquares())
-                                            optimizer=DeltaRule(eta=0.1))
+                                            optimizer=DeltaRule(eta=0.001))
 
             prediction_noisy, residual_error_noisy = RadialBasisNetwork.predict(testing['X'], testing['Y'])
             prediction_clean, residual_error_clean = RadialBasisNetwork.predict(testing_clean['X'], testing_clean['Y'])
@@ -158,6 +158,5 @@ def perceptron():
 
 # perceptron()
 #task31()
-# task32()
-task31()
+task32()
 #task32()

@@ -1,0 +1,15 @@
+{
+  "config": {
+    "n samples": 63,
+    "M input nodes": 1,
+    "N hidden nodes": 4,
+    "sigma": 0.1,
+    "learning rule": "LeastSquares",
+    "initializer": "RandomNormal(std=0.1)",
+    "epochs": 1,
+    "epoch_shuffle": true
+  }
+}
+
+residual error (noisy)=0.47458533177113904
+residual error clean=0.46693557069277014
