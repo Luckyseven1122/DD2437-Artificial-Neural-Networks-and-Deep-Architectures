@@ -12,7 +12,7 @@ class Centroids:
     def get_fi(self, X, sigma):
         pass
 
-    def get_matrix(self)
+    def get_matrix(self):
         return self._matrix
 
     def _transfer_function(self, x, sigma):
