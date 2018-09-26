@@ -4,6 +4,7 @@ from src.Network import Network
 from src.Optimizer import LeastSquares, DeltaRule
 from src.Initializer import RandomNormal
 from src.Centroids import Fixed
+from src.Plotter import plot_centroids_1d
 
 
 def square(x):
@@ -87,6 +88,7 @@ def task32():
 
     for t in tests:
         rbf_nodes, N_hidden_nodes = get_radial_coordinates(t)
+        centroids = Fixed(rbf_nodes)
         for sig in sigma:
 
 
@@ -94,7 +96,7 @@ def task32():
                                          Y=training['Y'],
                                          sigma=sig,
                                          hidden_nodes=N_hidden_nodes,
-                                         centroids=Fixed(rbf_nodes),
+                                         centroids=centroids,
                                          initializer=RandomNormal(std=0.1))
 
             data = RadialBasisNetwork.train(epochs=1,
@@ -112,6 +114,7 @@ def task32():
             plt.xlabel('x')
             plt.scatter(rbf_nodes, np.zeros(rbf_nodes.size))
             plt.legend()
+            plot_centroids_1d(centroids,sig)
             plt.show()
 
             print(data['config'])
