@@ -13,7 +13,7 @@ class Initializer:
         try:
             return np.load(file)
         except IOError:
-            np.save('./src/wcache/' + file, arr)
+            np.save('./src/__wcache__/' + file, arr)
             return arr
 
 class RandomNormal(Initializer):
