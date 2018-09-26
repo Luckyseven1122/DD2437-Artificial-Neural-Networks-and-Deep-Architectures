@@ -12,6 +12,9 @@ class Centroids:
     def get_fi(self, X, sigma):
         pass
 
+    def get_matrix(self):
+        return self._matrix
+
     def _transfer_function(self, x, sigma):
         return np.exp((-(x-self._matrix)**2)/(2*sigma**2))
 
