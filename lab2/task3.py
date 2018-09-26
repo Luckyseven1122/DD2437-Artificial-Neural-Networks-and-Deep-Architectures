@@ -13,18 +13,25 @@ def square(x):
     '''
     return np.where(x >= 0, 1, -1).astype(float)
 
-def get_radial_coordinates():
+def get_radial_coordinates(arg):
     '''
     m = np.array([[np.pi/4  ],
                   [3*np.pi/4],
                   [5*np.pi/4],
                   [7*np.pi/4]]).T
     '''
-    # Used for square(sin(2x))
-    m = np.array([[ 1.4, 2.6, 3.4, 5.3]])
+    q = np.pi/16
+    # Test 1
 
-    # used for sin(2x)
-    # m = np.arange(0.01, 2*np.pi - 0.01, 0.105).reshape(-1,1).T
+    if arg == 1:
+        m = np.array([[q*1, q*7, q*9, q*15, q*17, q*23, q*25, q*31]])
+
+    if arg == 2:
+        m = np.array([[q*4, q*12, q*20, q*28]])
+
+    if arg == 3:
+        m = 2*np.pi * np.random.rand(1,8)
+
     return m, m.shape[1]
 
 def generate_data_task31(func, noise_std):
@@ -57,7 +64,8 @@ def task31():
                                 initializer=RandomNormal())
 
     RadialBasisNetwork.train(epochs=1,
-                             optimizer=LeastSquares())
+                             optimizer=LeastSquares(),
+                             epoch_shuffle=True)
 
     prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
 
@@ -73,41 +81,47 @@ def task31():
 
 
 def task32():
-    training, testing = generate_data_task31(lambda x:np.sin(x), 0)
-    rbf_nodes, N_hidden_nodes = get_radial_coordinates()
+    training, testing = generate_data_task31(lambda x:np.sin(x), 0.1)
 
-    RadialBasisNetwork = Network(X=training['X'],
-                                 Y=training['Y'],
-                                 sigma=0.1,
-                                 hidden_nodes=N_hidden_nodes,
-                                 centroids=Fixed(rbf_nodes),
-                                 initializer=RandomNormal(std=0.1))
+    sigma = np.arange(0.05, 1.4, 0.3)
+    tests = [1, 2, 3] # weak, tighter, random
 
-    data = RadialBasisNetwork.train(epochs=1000,
-                                    optimizer=DeltaRule(eta=0.1))
+    for t in tests:
+        rbf_nodes, N_hidden_nodes = get_radial_coordinates(t)
+        for sig in sigma:
 
-    prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
 
-    print('residual_error', residual_error)
-    plt.plot(testing['X'], testing['Y'], label='True')
-    plt.plot(testing['X'], prediction, label='Prediction')
-    #plt.ylabel('sign(sin(2x))')
-    plt.ylabel('sin(2x)')
-    plt.xlabel('x')
-    plt.scatter(rbf_nodes, np.zeros(rbf_nodes.size))
-    plt.legend()
-    plt.show()
+            RadialBasisNetwork = Network(X=training['X'],
+                                         Y=training['Y'],
+                                         sigma=sig,
+                                         hidden_nodes=N_hidden_nodes,
+                                         centroids=Fixed(rbf_nodes),
+                                         initializer=RandomNormal(std=0.1))
 
-    print(data['config'])
+            data = RadialBasisNetwork.train(epochs=1,
+                                            epoch_shuffle=True,
+                                            optimizer=LeastSquares())
+                                            #optimizer=DeltaRule(eta=0.1))
+
+            prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
+
+            print('residual_error', residual_error)
+            plt.plot(testing['X'], testing['Y'], label='True')
+            plt.plot(testing['X'], prediction, label='Prediction')
+            #plt.ylabel('sign(sin(2x))')
+            plt.ylabel('sin(2x)')
+            plt.xlabel('x')
+            plt.scatter(rbf_nodes, np.zeros(rbf_nodes.size))
+            plt.legend()
+            plt.show()
+
+            print(data['config'])
 
 def perceptron():
-
     training, testing = generate_data_task31(lambda x:np.sin(x), 0)
     rbf_nodes, N_hidden_nodes = get_radial_coordinates()
     eta = 0.000001
     w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], Ww = rbf_nodes, epochs = 1000)
-
-
 
 #task31()
 # task32()
