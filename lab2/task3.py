@@ -7,6 +7,11 @@ from src.Centroids import Fixed
 from src.Plotter import plot_centroids_1d
 from src.Perceptron import Perceptron
 
+def save_data(data_sting, path):
+    with open(path, 'w+') as file:
+        file.write(data_sting)
+        file.close()
+
 def square(x):
     '''
     pass y = sin(2x)
@@ -25,17 +30,21 @@ def get_radial_coordinates(arg):
 
     if arg == 0:
         m = np.array([[1.4,2.6,3.4,5.3]])
+        name = 'square fit'
 
     if arg == 1:
         m = np.array([[q*1, q*7, q*9, q*15, q*17, q*23, q*25, q*31]])
+        name = 'tight'
 
     if arg == 2:
         m = np.array([[q*4, q*12, q*20, q*28]])
+        name = 'weak'
 
     if arg == 3:
         m = 2*np.pi * np.random.rand(1,8)
+        name = 'random'
 
-    return m, m.shape[1]
+    return {'nodes': m, 'N': m.shape[1], 'name': name}
 
 def generate_data_task31(func, noise_std):
 
@@ -57,15 +66,14 @@ def generate_data_task31(func, noise_std):
 def task31():
     training, testing = generate_data_task31(lambda x:square(np.sin(x)), 0)
     #training, testing = generate_data_task31(lambda x:square(np.sin(x)), 0.1)
-    rbf_nodes, N_hidden_nodes = get_radial_coordinates(0)
-    centroids = Fixed(rbf_nodes)
+    rbf_nodes = get_radial_coordinates(0)
+    centroids = Fixed(rbf_nodes['nodes'])
     sigma = 1.0
-
     RadialBasisNetwork = Network(X=training['X'],
                                 Y=training['Y'],
-                                sigma=sigma,
-                                hidden_nodes=N_hidden_nodes,
-                                centroids=centroids,
+                                sigma=1.0,
+                                hidden_nodes=rbf_nodes['N'],
+                                centroids=Fixed(rbf_nodes['nodes']),
                                 initializer=RandomNormal())
 
     RadialBasisNetwork.train(epochs=1,
@@ -74,13 +82,12 @@ def task31():
 
     prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
 
-    print('N_hidden_nodes:',N_hidden_nodes)
     print('residual_error', residual_error)
     plt.plot(testing['X'], testing['Y'], label='True')
     plt.plot(testing['X'], np.where(prediction >= 0, 1, -1), label='Prediction')
     plt.ylabel('sign(sin(2x))')
     plt.xlabel('x')
-    plt.scatter(rbf_nodes, np.zeros(rbf_nodes.size))
+    plt.scatter(rbf_nodes['nodes'], np.zeros(rbf_nodes['nodes'].size))
     plt.legend()
     plot_centroids_1d(centroids, sigma)
     plt.show()
@@ -93,37 +100,40 @@ def task32():
     tests = [1, 2, 3] # weak, tighter, random
 
     for t in tests:
-        rbf_nodes, N_hidden_nodes = get_radial_coordinates(t)
-        centroids = Fixed(rbf_nodes)
+        rbf_nodes = get_radial_coordinates(t)
+        centroids = Fixed(rbf_nodes['nodes'])
         for sig in sigma:
 
 
             RadialBasisNetwork = Network(X=training['X'],
                                          Y=training['Y'],
                                          sigma=sig,
-                                         hidden_nodes=N_hidden_nodes,
+                                         hidden_nodes=rbf_nodes['N'],
                                          centroids=centroids,
                                          initializer=RandomNormal(std=0.1))
 
-            data = RadialBasisNetwork.train(epochs=1,
+            data = RadialBasisNetwork.train(epochs=20,
                                             epoch_shuffle=True,
-                                            optimizer=LeastSquares())
-                                            #optimizer=DeltaRule(eta=0.1))
+                                            #optimizer=LeastSquares())
+                                            optimizer=DeltaRule(eta=0.1))
 
             prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
 
             print('residual_error', residual_error)
+            plt.clf()
             plt.plot(testing['X'], testing['Y'], label='True')
             plt.plot(testing['X'], prediction, label='Prediction')
             #plt.ylabel('sign(sin(2x))')
             plt.ylabel('sin(2x)')
             plt.xlabel('x')
-            plt.scatter(rbf_nodes, np.zeros(rbf_nodes.size))
+            plt.scatter(rbf_nodes['nodes'], np.zeros(rbf_nodes['nodes'].size))
             plt.legend()
             plot_centroids_1d(centroids,sig)
-            plt.show()
 
+            path = './figures/task3.2/sin(2x)_sig=' + str(sig) + '_set=' + rbf_nodes['name']
+            plt.savefig(path + '.png')
             print(data['config'])
+            save_data(data['config'] + '\n\n' + str(residual_error), path + '.txt')
 
 def perceptron():
     training, testing = generate_data_task31(lambda x:np.sin(x), 0)
@@ -131,5 +141,5 @@ def perceptron():
     eta = 0.000001
     w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], Ww = rbf_nodes, epochs = 1000)
 
-#task31()
-task32()
+task31()
+#task32()
