@@ -147,12 +147,17 @@ def task32():
 
 def perceptron():
     training, testing = generate_data_task31(lambda x:np.sin(x), 0)
-    rbf_nodes = get_radial_coordinates(1)
+    rbf_nodes, N_hidden_nodes = get_radial_coordinates(1)
     eta = 0.000001
-    w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], W = rbf_nodes['nodes'], epochs = 1000)
+    w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], W = rbf_nodes, epochs = 10000)
 
+    x = training['X']
+    y_preds = np.sum(x * w, axis=1)
+    plt.plot(x, y_preds)
+    plt.show()
 
+# perceptron()
 #task31()
-task32()
-
-#perceptron()
+# task32()
+task31()
+#task32()

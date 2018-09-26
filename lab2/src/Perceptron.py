@@ -3,7 +3,7 @@ import numpy as np
 class Perceptron():
     def __init__(self, eta):
         self.eta = eta
-    
+
     def activation(self, W, inputs):
         return np.dot(inputs, W)
 
@@ -13,9 +13,9 @@ class Perceptron():
     def update_weights(self, inputs, labels, W ):
         predictions = self.activation(W, inputs)
         T = self.threshold(predictions)
-        e = labels - T
-        return self.eta*np.dot(e.T, inputs), e
-    
+        e = T - labels
+        return -self.eta*np.dot(e.T, inputs), e
+
     def compute_cost(self, e):
         return np.mean(e**2) # mse
         # return np.where((e) == 0, 0, 1).mean()
@@ -29,4 +29,3 @@ class Perceptron():
             cost.append(c)
             WW += dW.T
         return WW, cost
-    
