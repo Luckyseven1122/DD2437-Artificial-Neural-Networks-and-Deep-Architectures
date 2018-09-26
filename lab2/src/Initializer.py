@@ -23,7 +23,7 @@ class RandomNormal(Initializer):
 
     def new(self, shape):
         W = np.random.normal(0, self._std, shape)
-        W = self._storage(self.__name__ + str(shape), W)
+        W = self._storage(self.__name__ + '_shape=' +str(shape), W)
         print(W.shape)
         return W
 
@@ -34,5 +34,5 @@ class Zeros(Initializer):
 
     def new(shape):
         W = np.zeros(shape)
-        W = self._storage(self.__name__ + str(shape), W)
+        W = self._storage(self.__name__ + '_shape=' + str(shape), W)
         return W
