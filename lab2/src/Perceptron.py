@@ -13,8 +13,8 @@ class Perceptron():
     def update_weights(self, inputs, labels, W ):
         predictions = self.activation(W, inputs)
         T = self.threshold(predictions)
-        e = labels - T
-        return self.eta*np.dot(e.T, inputs), e
+        e = T - labels
+        return -self.eta*np.dot(e.T, inputs), e
     
     def compute_cost(self, e):
         return np.mean(e**2) # mse
