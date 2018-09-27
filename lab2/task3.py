@@ -152,7 +152,7 @@ def task33():
     tests = [1, 2, 3, 4] # weak, tighter, random
 
     N_hidden_nodes = 6
-    centroids = SimpleCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi])
+    centroids = VanillaCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi])
 
 
     RadialBasisNetwork = Network(X=training['X'],
