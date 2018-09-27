@@ -34,14 +34,11 @@ class Centroids:
             self._matrix[:,c] = self._matrix[:,c] / np.linalg.norm(self._matrix[:,c])
 
     def _find_closest_RBF_unit_index(self, x):
-        min_dist = 99999999
-        idx = 0
+        distances = np.zeros((1, self._matrix.shape[1]))
         for c in range(self._matrix.shape[1]):
-            dist = np.linalg.norm(self._matrix[:,c] - x)
-            if dist < min_dist:
-                min_dist = dist
-                idx = c
-        return idx
+            distances[:,c] = np.linalg.norm(self._matrix[:,c] - x)
+        idx = np.argmin(distances)
+        return distances, idx
 
     def is_unsupervised(self):
         return self._should_update
@@ -70,7 +67,7 @@ class VanillaCL(Centroids):
 
     def update(self, X, sigma, eta):
         sample = X[np.random.randint(0, X.shape[0]),:].reshape(-1,1) # MIGHT FUCK THINGS UP! .shape(-1,1)??
-        idx = self._find_closest_RBF_unit_index(sample)
+        _, idx = self._find_closest_RBF_unit_index(sample)
         self._matrix[:,idx,None] += eta*(sample - self._matrix[:,idx].reshape(-1,1))
         #plt.clf()
         #plt.axis([0, 6, -1, 1])
@@ -94,11 +91,12 @@ class LeakyCL(Centroids):
 
     def update(self, X, sigma, eta):
         sample = X[np.random.randint(0, X.shape[0]),:].reshape(-1,1) # MIGHT FUCK THINGS UP! .shape(-1,1)??
-        idx = self._find_closest_RBF_unit_index(sample)
+        distances, idx = self._find_closest_RBF_unit_index(sample)
 
-        ## TODO: add some update to all nodes
-        # Idea: Return distance d (shape = (1, N) ) array for each point.
-        # dW = eta * (normalize(d) + 1) * (sample - matrix)
-        self._matrix[:,idx,None] += eta*(sample - self._matrix[:,idx].reshape(-1,1))
+        # Evaluate if this is good approach or not
+        reverse_normalized_distances = 1 - distances / np.linalg.norm(distances)
+        reverse_normalized_distances[:,idx] = np.sum(reverse_normalized_distances)
+        reverse_normalized_distances_softmax = np.exp(reverse_normalized_distances) / np.sum(np.exp(reverse_normalized_distances), axis=1)
+        self._matrix += eta * reverse_normalized_distances_softmax * (sample - self._matrix)
 
         return self._calculate_fi(X, sigma)

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from src.Network import Network
 from src.Optimizer import LeastSquares, DeltaRule
 from src.Initializer import RandomNormal
-from src.Centroids import Fixed, VanillaCL
+from src.Centroids import Fixed, VanillaCL, LeakyCL
 from src.Plotter import plot_centroids_1d
 from src.Perceptron import Perceptron
 
@@ -152,8 +152,8 @@ def task33():
     tests = [1, 2, 3, 4] # weak, tighter, random
 
     N_hidden_nodes = 6
-    centroids = VanillaCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi])
-
+    #centroids = VanillaCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi])
+    centroids = LeakyCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi])
 
     RadialBasisNetwork = Network(X=training['X'],
                                  Y=training['Y'],
