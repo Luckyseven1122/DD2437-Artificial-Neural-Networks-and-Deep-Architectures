@@ -7,6 +7,16 @@ from src.Centroids import Fixed, VanillaCL, LeakyCL
 from src.Plotter import plot_centroids_1d
 from src.Perceptron import Perceptron
 
+
+def ballistic_data():
+    t = np.fromfile('./data_lab2/ballist.dat', sep=" ").reshape(100, 4)
+    tt = np.fromfile('./data_lab2/balltest.dat', sep=" ").reshape(100, 4)
+
+    training = {'X': t[:,0:2], 'Y': t[:,2:4]}
+    test = {'X': tt[:,0:2], 'Y': tt[:,2:4]}
+
+    return training, test
+
 def save_data(data_sting, path):
     with open(path, 'w+') as file:
         file.write(data_sting)
@@ -176,6 +186,7 @@ def task33():
 
             print('residual error', residual_error_clean)
             print('residual error (noisy)', residual_error_noisy)
+
             plt.clf()
             plt.plot(testing['X'], testing['Y'], label='True')
             plt.plot(testing['X'], prediction_noisy, label='Prediction (noise)')
@@ -200,19 +211,75 @@ def task33():
             plt.legend(loc='upper right')
             plt.savefig(path + '_learning.png')
 
+def task333():
+    training, testing = ballistic_data()
+    #plt.scatter(testing['X'][:,0], testing['Y'][:,0], label='col1')
+    #plt.scatter(testing['X'][:,1], testing['Y'][:,1], label='col2')
+    #plt.legend()
+    #plt.show()
+    N_hidden_nodes = 10
+    sigma = 0.3248
+    eta = 0.1
+    eta_hidden = 0.02
 
-def perceptron():
-    training, testing = generate_data_task31(lambda x:np.sin(x), 0)
-    rbf_nodes, N_hidden_nodes = get_radial_coordinates(1)
-    eta = 0.000001
-    w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], W = rbf_nodes, epochs = 10000)
 
-    x = training['X']
-    y_preds = np.sum(x * w, axis=1)
-    plt.plot(x, y_preds)
-    plt.show()
+    centroids = LeakyCL(matrix=np.empty((training['X'].shape[1], N_hidden_nodes)),
+                        space=[0, 2/np.sqrt(training['X'].shape[1])],
+                        eta=eta_hidden)
 
-# perceptron()
+    RadialBasisNetwork = Network(X=training['X'],
+                                 Y=training['Y'],
+                                 sigma=sigma,
+                                 hidden_nodes=N_hidden_nodes,
+                                 centroids=centroids,
+                                 initializer=RandomNormal(std=0.1))
+
+    data = RadialBasisNetwork.train(epochs=2000,
+                                    epoch_shuffle=True,
+                                    #optimizer=LeastSquares())
+                                    optimizer=DeltaRule(eta=eta))
+
+    prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
+    print('residual error:',residual_error)
+
+    path = './figures/task3.3/ballist_N=' + str(N_hidden_nodes) + '_eta=' + str(eta) + '_sigma=' + str(sigma)
+
+
+    padding = 0.1
+    min = prediction[:,0].min() - padding if prediction[:,0].min() < testing['Y'][:,0].min() else testing['Y'][:,0].min() - padding
+    max = prediction[:,0].max() + padding if prediction[:,0].max() > testing['Y'][:,0].max() else testing['Y'][:,0].max() + padding
+    plt.clf()
+    plt.axis([min, max, min, max])
+    plt.plot([min, max], [min, max], '--k', linewidth=1, dashes=(5, 10))
+    plt.scatter(prediction[:,0], testing['Y'][:,0], marker='x')
+    plt.title('Angle/Distance')
+    plt.ylabel('True')
+    plt.xlabel('Predicted')
+    plt.savefig(path + '_angledistance.png')
+
+    padding = 0.1
+    min = prediction[:,1].min() - padding if prediction[:,1].min() < testing['Y'][:,1].min() else testing['Y'][:,1].min() - padding
+    max = prediction[:,1].max() + padding if prediction[:,1].max() > testing['Y'][:,1].max() else testing['Y'][:,1].max() + padding
+    plt.clf()
+    plt.axis([min, max, min, max])
+    plt.plot([min, max], [min, max], '--k', linewidth=1, dashes=(5, 10))
+    plt.scatter(prediction[:,1], testing['Y'][:,1], marker='x')
+    plt.title('Velocity/Height')
+    plt.ylabel('True')
+    plt.xlabel('Predicted')
+    plt.savefig(path + '_velocityheight.png')
+
+    print(data['config'])
+    save_data(data['config'] + '\n\nresidual error=' + str(residual_error), path + '.txt')
+
+    plt.clf()
+    plt.plot(np.arange(0, len(data['t_loss'])), data['t_loss'], label='training loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Total approximation error')
+    plt.legend(loc='upper right')
+    plt.savefig(path + '_learning.png')
+
 #task31()
 #task32()
-task33()
+#task33()
+task333()

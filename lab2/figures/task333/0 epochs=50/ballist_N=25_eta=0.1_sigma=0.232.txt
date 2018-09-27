@@ -1,0 +1,15 @@
+{
+  "config": {
+    "n samples": 100,
+    "M input nodes": 2,
+    "N hidden nodes": 25,
+    "sigma": 0.232,
+    "learning rule": "DeltaRule(eta=0.1)",
+    "initializer": "RandomNormal(std=0.1)",
+    "epochs": 50,
+    "epoch_shuffle": true,
+    "centroid eta": 0.02
+  }
+}
+
+residual error=0.015662677849988548

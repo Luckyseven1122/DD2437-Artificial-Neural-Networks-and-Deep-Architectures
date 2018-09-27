@@ -6,25 +6,30 @@ class Centroids:
     def __init__(self, matrix, update):
         self._matrix = matrix
         self._N = matrix.shape[1]
+        self._M = None
+        self._O = None
+        self._c = 0
 
     @abstractmethod
     def get_fi(self, X, sigma):
         pass
 
-    @abstractmethod
-    def update(self, X, sigma):
-        pass
+    def set_dims(self, N, M, O):
+        assert N == self._N
+        self._M = M
+        self._O = O
 
     def get_matrix(self):
         return self._matrix
 
     def _transfer_function(self, x, sigma):
-        return np.exp((-(x-self._matrix)**2)/(2*sigma**2))
+        assert x.shape[1] == self._M
+        return np.exp((-(np.apply_along_axis(np.linalg.norm, axis=0, arr=(x.T-self._matrix)))**2)/(2*sigma**2))
 
     def _calculate_fi(self, X, sigma):
         fi = np.zeros((X.shape[0], self._N))
         for i in range(X.shape[0]):
-            fi[i,:] = self._transfer_function(X[i,:], sigma)
+            fi[i,:] = self._transfer_function(X[i,:].reshape(1,-1), sigma)
         return fi
 
     def _normalize_matrix(self):
@@ -32,6 +37,7 @@ class Centroids:
             self._matrix[:,c] = self._matrix[:,c] / np.linalg.norm(self._matrix[:,c])
 
     def _find_closest_RBF_unit_index(self, x):
+        assert x.shape == (1, self._M)
         distances = np.zeros((1, self._matrix.shape[1]))
         for c in range(self._matrix.shape[1]):
             distances[:,c] = np.linalg.norm(self._matrix[:,c] - x)
@@ -81,12 +87,17 @@ class LeakyCL(Centroids):
         self._eta = eta
 
     def get_fi(self, X, sigma):
-        sample = X[np.random.randint(0, X.shape[0]),:].reshape(-1,1) # MIGHT FUCK THINGS UP! .shape(-1,1)??
+        assert X.shape[1] == self._M
+        sample = X[np.random.randint(0, X.shape[0]),:].reshape(1,-1) # MIGHT FUCK THINGS UP! .shape(-1,1)??
         distances, idx = self._find_closest_RBF_unit_index(sample)
 
         # Evaluate if this is good approach or not
         reverse_normalized_distances = 1 - distances / np.linalg.norm(distances)
         reverse_normalized_distances[:,idx] = np.sum(reverse_normalized_distances)
         reverse_normalized_distances_softmax = np.exp(reverse_normalized_distances) / np.sum(np.exp(reverse_normalized_distances), axis=1)
-        self._matrix += self._eta * reverse_normalized_distances_softmax * (sample - self._matrix)
+        self._matrix += self._eta * reverse_normalized_distances_softmax * (sample.T - self._matrix)
+
+
+        #self._normalize_matrix()
+
         return self._calculate_fi(X, sigma)

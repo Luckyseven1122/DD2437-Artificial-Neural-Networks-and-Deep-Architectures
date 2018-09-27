@@ -12,6 +12,7 @@ def gauss(x,y,Sigma,mu):
     X=np.vstack((x,y)).T
     mat_multi=np.dot((X-mu[None,...]).dot(np.linalg.inv(Sigma)),(X-mu[None,...]).T)
     return  np.diag(np.exp(-1*(mat_multi)))
+    
 
 def plot_centroids_1d(centroids, sigma):
     c = centroids.get_matrix()
