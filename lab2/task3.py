@@ -69,6 +69,8 @@ def generate_data_task31(func, noise_std):
 
     return {'X': train_X, 'Y': train_Y}, {'X': test_X, 'Y': test_Y}, {'X': test_X_clean, 'Y': test_Y_clean}
 
+def generate_data_task33():
+    pass
 
 def task31():
     training, testing, _ = generate_data_task31(lambda x:square(np.sin(x)), 0)
@@ -151,9 +153,10 @@ def task33():
     sigma = [0.1, 0.3, 0.5, 1.0, 1.3]
     tests = [1, 2, 3, 4] # weak, tighter, random
 
+
     N_hidden_nodes = 6
     #centroids = VanillaCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi])
-    centroids = LeakyCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi])
+    centroids = LeakyCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi], eta=0.1)
 
     RadialBasisNetwork = Network(X=training['X'],
                                  Y=training['Y'],

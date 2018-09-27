@@ -78,7 +78,7 @@ class Network:
         self.epochs = epochs
         self.epoch_shuffle = epoch_shuffle
 
-        self.fi = self.centroids.get_fi(self.X, self.sigma)
+
 
         # Adjust batch for sample or batch learning based on optimizer
         batch_idx = [np.arange(0, self.n_samples)] if self.optimizer.__name__ == 'LeastSquares' else list(range(0,self.n_samples))
@@ -90,8 +90,7 @@ class Network:
                 self.X = self.X[idx]
                 self.Y = self.Y[idx] # used or no?
 
-            if self.centroids.is_unsupervised():
-                self.fi = self.centroids.update(self.X, self.sigma, eta=0.1)
+            self.fi = self.centroids.get_fi(self.X, self.sigma)
 
             for batch in batch_idx:
                 self.linear_weights = optimizer.train(self.fi[batch,:], self.linear_weights, self.Y[batch,:])

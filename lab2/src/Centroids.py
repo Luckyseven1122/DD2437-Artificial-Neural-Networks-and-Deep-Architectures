@@ -40,8 +40,6 @@ class Centroids:
         idx = np.argmin(distances)
         return distances, idx
 
-    def is_unsupervised(self):
-        return self._should_update
 
 class Fixed(Centroids):
     def __init__(self, matrix):
@@ -51,24 +49,20 @@ class Fixed(Centroids):
     def get_fi(self, X, sigma):
         return self._calculate_fi(X, sigma)
 
-    def update(self, X, sigma):
-        pass
 
 class VanillaCL(Centroids):
-    def __init__(self, matrix, space=[-2, 2]):
+    def __init__(self, matrix, space=[-2, 2], eta=0.1):
         matrix = np.random.uniform(space[0], space[1], size=(matrix.shape))
         super().__init__(matrix, update=True)
         #self._c = 0
         #self._normalize_matrix()
         self.__name__ = 'VanillaCL'
+        self._eta = eta
 
     def get_fi(self, X, sigma):
-        return self._calculate_fi(X, sigma)
-
-    def update(self, X, sigma, eta):
         sample = X[np.random.randint(0, X.shape[0]),:].reshape(-1,1) # MIGHT FUCK THINGS UP! .shape(-1,1)??
         _, idx = self._find_closest_RBF_unit_index(sample)
-        self._matrix[:,idx,None] += eta*(sample - self._matrix[:,idx].reshape(-1,1))
+        self._matrix[:,idx,None] += self._eta*(sample - self._matrix[:,idx].reshape(-1,1))
         #plt.clf()
         #plt.axis([0, 6, -1, 1])
         #plt.scatter(self._matrix, np.zeros(self._matrix.shape[1]))
@@ -78,18 +72,17 @@ class VanillaCL(Centroids):
         return self._calculate_fi(X, sigma)
 
 
+
 class LeakyCL(Centroids):
-    def __init__(self, matrix, space=[-2, 2]):
+    def __init__(self, matrix, space=[-2, 2], eta=0.1):
         matrix = np.random.uniform(space[0], space[1], size=(matrix.shape))
         super().__init__(matrix, update=True)
         #self._c = 0
         #self._normalize_matrix()
         self.__name__ = 'VanillaCL'
+        self._eta = eta
 
     def get_fi(self, X, sigma):
-        return self._calculate_fi(X, sigma)
-
-    def update(self, X, sigma, eta):
         sample = X[np.random.randint(0, X.shape[0]),:].reshape(-1,1) # MIGHT FUCK THINGS UP! .shape(-1,1)??
         distances, idx = self._find_closest_RBF_unit_index(sample)
 
@@ -97,6 +90,5 @@ class LeakyCL(Centroids):
         reverse_normalized_distances = 1 - distances / np.linalg.norm(distances)
         reverse_normalized_distances[:,idx] = np.sum(reverse_normalized_distances)
         reverse_normalized_distances_softmax = np.exp(reverse_normalized_distances) / np.sum(np.exp(reverse_normalized_distances), axis=1)
-        self._matrix += eta * reverse_normalized_distances_softmax * (sample - self._matrix)
-
+        self._matrix += self._eta * reverse_normalized_distances_softmax * (sample - self._matrix)
         return self._calculate_fi(X, sigma)
