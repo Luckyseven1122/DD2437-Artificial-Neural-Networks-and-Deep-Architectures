@@ -148,49 +148,58 @@ def task32():
             save_data(data['config'] + '\n\nresidual error (noisy)=' + str(residual_error_noisy) + '\nresidual error clean=' + str(residual_error_clean) , path + '.txt')
 
 def task33():
-    training, testing, testing_clean = generate_data_task31(lambda x:np.sin(x), 0.1)
+    N_units = [{'N': 8, 'name': 'Tight', 'sigma': 0.5},
+               {'N': 12,'name': 'task31', 'sigma': 1.0}]
 
-    sigma = [0.1, 0.3, 0.5, 1.0, 1.3]
-    tests = [1, 2, 3, 4] # weak, tighter, random
+    noise = [0, 0.1]
 
+    for std in noise:
+        training, testing, testing_clean = generate_data_task31(lambda x:np.sin(x), std)
+        for hidden_layer in N_units:
+            #centroids = VanillaCL(np.empty((training['X'].shape[1], hidden_layer['N'])), space=[0, 2*np.pi], eta=0.001)
+            centroids = LeakyCL(np.empty((training['X'].shape[1], hidden_layer['N'])), space=[0, 2*np.pi], eta=0.001)
 
-    N_hidden_nodes = 6
-    #centroids = VanillaCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi])
-    centroids = LeakyCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi], eta=0.1)
+            RadialBasisNetwork = Network(X=training['X'],
+                                         Y=training['Y'],
+                                         sigma=hidden_layer['sigma'],
+                                         hidden_nodes=hidden_layer['N'],
+                                         centroids=centroids,
+                                         initializer=RandomNormal(std=0.1))
 
-    RadialBasisNetwork = Network(X=training['X'],
-                                 Y=training['Y'],
-                                 sigma=1.0,
-                                 hidden_nodes=N_hidden_nodes,
-                                 centroids=centroids,
-                                 initializer=RandomNormal(std=0.1))
+            data = RadialBasisNetwork.train(epochs=10000,
+                                            epoch_shuffle=True,
+                                            #optimizer=LeastSquares())
+                                            optimizer=DeltaRule(eta=0.001))
 
-    data = RadialBasisNetwork.train(epochs=1000,
-                                    epoch_shuffle=True,
-                                    #optimizer=LeastSquares())
-                                    optimizer=DeltaRule(eta=0.001))
+            prediction_noisy, residual_error_noisy = RadialBasisNetwork.predict(testing['X'], testing['Y'])
+            prediction_clean, residual_error_clean = RadialBasisNetwork.predict(testing_clean['X'], testing_clean['Y'])
 
-    prediction_noisy, residual_error_noisy = RadialBasisNetwork.predict(testing['X'], testing['Y'])
-    prediction_clean, residual_error_clean = RadialBasisNetwork.predict(testing_clean['X'], testing_clean['Y'])
+            print('residual error', residual_error_clean)
+            print('residual error (noisy)', residual_error_noisy)
+            plt.clf()
+            plt.plot(testing['X'], testing['Y'], label='True')
+            plt.plot(testing['X'], prediction_noisy, label='Prediction (noise)')
+            #plt.plot(testing_clean['X'], prediction_clean, label='Prediction (no noise)')
+            #plt.ylabel('sign(sin(2x))')
+            plt.ylabel('sin(2x)')
+            plt.xlabel('x')
+            plt.scatter(centroids.get_matrix(), np.zeros(hidden_layer['N']).reshape(-1,1).T)
+            plt.legend(loc='upper right')
+            plot_centroids_1d(centroids, hidden_layer['sigma'])
+            #plt.show()
 
-    print('residual error', residual_error_clean)
-    print('residual error (noisy)', residual_error_noisy)
-    plt.clf()
-    plt.plot(testing['X'], testing['Y'], label='True')
-    plt.plot(testing['X'], prediction_noisy, label='Prediction (noise)')
-    #plt.plot(testing_clean['X'], prediction_clean, label='Prediction (no noise)')
-    #plt.ylabel('sign(sin(2x))')
-    plt.ylabel('sin(2x)')
-    plt.xlabel('x')
-    #plt.scatter(N_hidden_nodes, np.zeros(N_hidden_nodes))
-    plt.legend(loc='upper right')
-    plot_centroids_1d(centroids,1.0)
-    plt.show()
+            path = './figures/task3.3/sin(2x)_sigma=' + str(hidden_layer['sigma']) + '_set=' + hidden_layer['name'] + '_noise=' + str(std)
+            plt.savefig(path + '.png')
+            print(data['config'])
+            save_data(data['config'] + '\n\nresidual error (noisy)=' + str(residual_error_noisy) + '\nresidual error clean=' + str(residual_error_clean) , path + '.txt')
 
-    path = './figures/task3.2/sin(2x)_sig=' + str(1.0) + '_set=' + 'SimpleCL'
-    #plt.savefig(path + '.png')
-    print(data['config'])
-    #save_data(data['config'] + '\n\nresidual error (noisy)=' + str(residual_error_noisy) + '\nresidual error clean=' + str(residual_error_clean) , path + '.txt')
+            plt.clf()
+            plt.plot(np.arange(0, len(data['t_loss'])), data['t_loss'], label='training loss')
+            plt.xlabel('Epochs')
+            plt.ylabel('Total approximation error')
+            plt.legend(loc='upper right')
+            plt.savefig(path + '_learning.png')
+
 
 def perceptron():
     training, testing = generate_data_task31(lambda x:np.sin(x), 0)

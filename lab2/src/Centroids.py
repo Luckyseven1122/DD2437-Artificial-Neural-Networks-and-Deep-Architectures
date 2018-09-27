@@ -5,9 +5,7 @@ import matplotlib.pyplot as plt
 class Centroids:
     def __init__(self, matrix, update):
         self._matrix = matrix
-        self._optimizer = None
         self._N = matrix.shape[1]
-        self._should_update = update
 
     @abstractmethod
     def get_fi(self, X, sigma):
