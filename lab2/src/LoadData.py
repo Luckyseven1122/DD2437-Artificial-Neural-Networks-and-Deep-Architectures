@@ -34,20 +34,21 @@ class LoadData:
             return np.array([ np.array((float(x),float(y))) for (x,y) in data])
 
     def mp(self):
-        districts = [] # (349, 1) there is 1 - 29 districts one row is for one MP member 
-        names = [] # (349, 1) one name for each parlament
+        districts = [] # (349,) there is 1 - 29 districts one idx is for one MP member 
+        names = [] # (349, ) one name for each parlament
         party = [] # dict (349,) maps each MP index to correspding party
+        sex = [] # (349,) 0 = male, 1 = female
 
         # (349, 31), one row is one member, one index in a row is a vote in that voting, total votes is 31
         votes = [] 
 
         mpdistrict = os.path.join(dir, '../data_lab2/mpdistrict.dat')
         with open(mpdistrict) as f:
-            districts = np.array([int(d.strip()) for d in f.readlines()]).reshape((349,1))
+            districts = np.array([int(d.strip()) for d in f.readlines()])
 
         mpnames = os.path.join(dir, '../data_lab2/mpnames.txt')
         with open(mpnames, encoding="ISO-8859-1") as f:
-            names = np.array([n.strip() for n in f.readlines()]).reshape((349,1))
+            names = np.array([n.strip() for n in f.readlines()])
 
         # Coding: 0=no party, 1='m', 2='fp', 3='s', 4='v', 5='mp', 6='kd', 7='c'
         d = {
@@ -74,4 +75,10 @@ class LoadData:
         with open(mpvotes) as f:
             votes = np.array([float(v.strip()) for v in f.readlines()[0].split(',')]).reshape((349,31))
 
-        return districts, names, party, votes
+        
+        # 0 male, 1 female
+        mpsex = os.path.join(dir, '../data_lab2/mpsex.dat')
+        with open(mpsex) as f:
+            sex = [int(s.strip()) for s in f.readlines()[2:]]
+
+        return districts, names, party, votes, sex

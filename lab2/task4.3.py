@@ -1,10 +1,12 @@
 import numpy as np
 import os
-from collections import defaultdict
-import matplotlib.pyplot as plt
-from src.LoadData import LoadData
 
-districts, names, party, votes = LoadData().mp()
+from src.LoadData import LoadData
+from collections import defaultdict
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+
+districts, names, party, votes, sex = LoadData().mp()
 
 class SOM:
     ''' SOM takes x = data, grid_size = (n,m) size of weight matrix '''
@@ -23,18 +25,17 @@ class SOM:
         saved_grid_name = 'SOM_weight_grid_saved_MP'
         grid = None
 
-        # has_saved_grid = os.path.isfile(saved_grid_name)
-        # if(not(has_saved_grid)):
-        min, max= 0, 1,
-        grid = np.random.uniform(min, max, self.grid_size)
+        has_saved_grid = os.path.isfile(saved_grid_name)
+        if(not(has_saved_grid)):
+            min, max= 0, 1,
+            grid = np.random.uniform(min, max, self.grid_size)
+            np.savetxt(saved_grid_name, grid, fmt="%s")
+
+        if(load_weights):
+            grid = np.array(np.loadtxt(saved_grid_name))
+
+        assert type(grid) is np.ndarray, " Failed to init grid"
         return grid
-        # np.savetxt(saved_grid_name, grid, fmt="%s")
-
-#         if(load_weights):
-#             grid = np.array(np.loadtxt(saved_grid_name))
-
-#         assert type(grid) is np.ndarray, " Failed to init grid"
-#         return grid
 
     def find_nearest_weight(self, prop):
         ''' find closets weight to a given input prop returns: (idx, distance) = (int, float)'''
@@ -44,17 +45,13 @@ class SOM:
     
     
     def get_neighbours(self, idx, radius = 1):
-        ''' returns the weights behind and infront of weight[idx] '''
+        ''' returns the weights within the square of radius = radius around weight[idx] '''
 
-        weight_idxes = np.arange(self.n_weights)
-
-        look_around = int(np.floor(radius / 2))
-        
-        behind = max(0, idx - look_around)
-        infront = min(idx + look_around, len(weight_idxes))
-        
-        neighbours = weight_idxes[behind: infront]
-        return neighbours[neighbours != idx]
+        w = np.arange(0,100).reshape((10,10))
+        twoD = [(j,i) for j in range(10) for i in range(10)]
+        row, col = twoD[idx]
+        bros = w[max(row - radius, 0) : min(row + radius + 1,10), max(col - radius, 0) : min(col + radius + 1 ,10)].flatten()
+        return bros[bros != idx]
         
    
     def train(self, epochs, eta, radius):
@@ -71,63 +68,117 @@ class SOM:
                 self.weight_grid[neighbours_idx] += eta * (prop - neighbours)
                 
                 ''' update learning rate '''
-                radius = int(np.ceil(2 * np.exp(-epoch / radius_smoothing)))
+                radius = int(np.ceil(5 * np.exp(-epoch / radius_smoothing)))
     
 
-    def result(self, mp):
-        ''' for each animal find the closest weight'''
+    def result(self):
+        ''' for each mp find the closest weight'''
         pos = []
         for i, prop in enumerate(self.x):
             nb, dist = self.find_nearest_weight(prop)
             pos.append(nb)
-
-        return pos, np.argsort(pos)
-        # return mp[pos]
+        return pos
 
 settings = {
     'grid_size': (10**2,31),
     'data': votes,
     'epochs': 20,
     'eta': 0.2,
-    'radius': 50
+    'radius': 349
 }
 
 SOM = SOM(settings['data'], settings['grid_size'])
 
 SOM.train(settings['epochs'], settings['eta'], settings['radius'])
-indexes, res  = SOM.result(votes)
+res  = SOM.result()
 
-idx = np.arange(1,100)
 buckets = defaultdict(list)
 
-for i in range(349):
-    buckets[indexes[i]].append((res[i], party[res[i]]))
+for mp_idx, weight in enumerate(res):
+    buckets[weight].append((mp_idx, party[mp_idx], sex[mp_idx], districts[mp_idx], names[mp_idx]))
 
-for i in range(349):
-    print(i , ' : ' , buckets[i])
+party_colors = {
+    'v':  "#DA291C", 
+    's':  "#E8112d", 
+    'mp': "#83CF39", 
+    'c':  "#009933",
+    'fp': "#006AB3",
+    'm':  "#52BDEC", 
+    'kd': "#000077",
+    'null': '#FFFFFF'}
 
-# print(res)
-# print(indexes)
-# print(party)
-# buckets = dict(idx
+sex_colors = {
+    0: '#0000ff', # boy
+    1: '#ffc0cb', # gurl
+    2: '#FFFFFF'
+}
+data_to_plot_x, data_to_plot_y = np.zeros(100), np.zeros(100)
+twoD = [(j,i) for j in range(10) for i in range(10)]
+xx, yy = zip(*twoD)
+colors = [party_colors['null']]*100
 
-# print(res)
-# print([party[r] for r in res])
-# tour = SOM.weight_grid
-# x = tour[:,0]
-# y = tour[:,1]
+boys_c, boy_size = [sex_colors[2]]*100, [200]*100
+girls_c, girl_size = [sex_colors[2]]*100, [200]*100
 
-# con_x = [x[0], x[-1]]
-# con_y = [y[0], y[-1]]
+sizes = [200]*100
 
-# plt.scatter(x[0], y[0], label = 'Start', s=800, facecolors='none', edgecolors='r')
-# plt.scatter(x[-1], y[-1], label = 'End', s=800, facecolors='none', edgecolors='b')
-# plt.plot(x,y, 'r', label = 'Suggested tour')
-# plt.plot(con_x, con_y, 'r') # connect last and first city lol
-# plt.scatter(x,y, s=100, c='b', label = 'Approximated cities')
-# plt.scatter(cities[:,0], cities[:,1], marker=('x'), s=150, label='Actual cities')
-# plt.legend(prop={'size': 20})
-# plt.xlabel('X coordinates', fontsize=18)
-# plt.ylabel('Y coordinates', fontsize=18)
+menu = 2 #1 # plot parties
+scale = 350
 
-plt.show(block=True)
+for b in range(100):
+    bucket = list(zip(*buckets[b]))
+    if len(bucket) == 0:
+        continue
+
+    mp_ids, parties, sexes, dists, n = bucket 
+    if(menu == 1):
+        parties, counts = np.unique(parties, return_counts=True)
+        print(parties, counts)
+        arg_max = np.argmax(counts)
+        colors[b] = party_colors[parties[arg_max]]
+        sizes[b] = counts[arg_max] * scale
+        continue
+
+    if(menu == 2): # plot sexes
+        sex, counts = np.unique(sexes, return_counts=True)
+        if(len(sex) == 2):
+            b_c, g_c = counts[0], counts[1]
+            boy_size[b], girl_size[b] = b_c * scale, g_c * scale
+            boys_c[b], girls_c[b] = sex_colors[0], sex_colors[1]
+        elif(sex[0] == 0): # man
+            boy_size[b] = counts[0] * scale * 2
+            boys_c[b] = sex_colors[0]
+        else: # gurl
+            girl_size[b] = counts[0] * scale
+            girls_c[b] = sex_colors[1]
+        continue
+
+
+plt.style.use('seaborn-whitegrid')
+
+if(menu == 1):
+    plt.scatter(xx,yy, c=colors, s=sizes, alpha=0.9, cmap=party_colors.values())
+    
+    patchList = []
+    for key in party_colors:
+            if(key == 'null'): continue
+            data_key = mpatches.Patch(color=party_colors[key], label=key)
+            patchList.append(data_key)
+    
+    plt.legend(handles=patchList, bbox_to_anchor=(1, 1), prop={'size': 30})
+    plt.title('Voting patterns for the Swedish parlament, 2004-2005', fontsize=36, y=1.05)
+
+if(menu == 2):
+    # plt.scatter(xx,yy, c=boys_c, s=160, alpha=1, marker='s')
+    # plt.scatter(xx,yy, c=girls_c, s=girl_size, alpha=0.5)
+    img = np.zeros(10,10)
+
+
+ax = plt.gca()
+ax.set_aspect('equal', adjustable='box')
+ax.set_xticks(np.arange(0, 10, 1))
+ax.set_yticks(np.arange(0, 10, 1))
+ax.set_xticklabels(np.arange(0, 10, 1))
+ax.set_yticklabels(np.arange(0, 10, 1))
+plt.show()
+
