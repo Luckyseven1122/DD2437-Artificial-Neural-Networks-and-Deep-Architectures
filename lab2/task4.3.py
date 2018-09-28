@@ -4,6 +4,7 @@ import os
 from src.LoadData import LoadData
 from collections import defaultdict
 import matplotlib.patches as mpatches
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 districts, names, party, votes, sex = LoadData().mp()
@@ -79,6 +80,18 @@ class SOM:
             pos.append(nb)
         return pos
 
+def add_legend(d):
+    d.pop('null')
+    patchList = []
+    for key in d:
+            if(key == 'null'): continue
+            data_key = mpatches.Patch(color=d[key], label=key)
+            patchList.append(data_key)
+    
+    plt.legend(handles=patchList, bbox_to_anchor=(1, 1), prop={'size': 30})
+
+
+# best settings for parties was 20 epochs, eta 0.2, radius 349,radius_smoothing=10, alpha const = 5
 settings = {
     'grid_size': (10**2,31),
     'data': votes,
@@ -106,28 +119,33 @@ party_colors = {
     'm':  "#52BDEC", 
     'kd': "#000077",
     'null': '#FFFFFF'}
+p_map = { 'v': 0,  's': 1,  'mp': 2,  'c': 3, 'fp':4,  'm': 5, 'kd':6,  'null':7}
 
 sex_colors = {
-    0: '#0000ff', # boy
-    1: '#ffc0cb', # gurl
-    2: '#FFFFFF'
+    'Boys': '#0000ff', # boy
+    'Girls': '#ffc0cb', # gurl
+    'null': '#FFFFFF'
 }
 data_to_plot_x, data_to_plot_y = np.zeros(100), np.zeros(100)
 twoD = [(j,i) for j in range(10) for i in range(10)]
 xx, yy = zip(*twoD)
+xx = np.array(xx)
+yy = np.array(yy)
 colors = [party_colors['null']]*100
 
-boys_c, boy_size = [sex_colors[2]]*100, [200]*100
-girls_c, girl_size = [sex_colors[2]]*100, [200]*100
+boys_c, boy_size = [sex_colors['null']]*100, [200]*100
+girls_c, girl_size = [sex_colors['null']]*100, [200]*100
 
 sizes = [200]*100
 
 menu = 2 #1 # plot parties
 scale = 350
-
 for b in range(100):
     bucket = list(zip(*buckets[b]))
+    print(len(bucket))
     if len(bucket) == 0:
+        xx[b] = -1
+        yy[b] = -1
         continue
 
     mp_ids, parties, sexes, dists, n = bucket 
@@ -137,48 +155,50 @@ for b in range(100):
         arg_max = np.argmax(counts)
         colors[b] = party_colors[parties[arg_max]]
         sizes[b] = counts[arg_max] * scale
+        
         continue
 
     if(menu == 2): # plot sexes
         sex, counts = np.unique(sexes, return_counts=True)
+        print(sex, counts, ' cords; ', xx[b], yy[b])
         if(len(sex) == 2):
             b_c, g_c = counts[0], counts[1]
             boy_size[b], girl_size[b] = b_c * scale, g_c * scale
-            boys_c[b], girls_c[b] = sex_colors[0], sex_colors[1]
+            boys_c[b], girls_c[b] = sex_colors['Boys'], sex_colors['Girls']
         elif(sex[0] == 0): # man
-            boy_size[b] = counts[0] * scale * 2
-            boys_c[b] = sex_colors[0]
+            boy_size[b] = counts[0] * scale
+            boys_c[b] = sex_colors['Boys']
+            girl_size[b] = 0
         else: # gurl
             girl_size[b] = counts[0] * scale
-            girls_c[b] = sex_colors[1]
+            girls_c[b] = sex_colors['Girls']
+            boy_size[b] = 0
         continue
+
+    if(menu == 3): # plot districts
+        pass # TODO
+
 
 
 plt.style.use('seaborn-whitegrid')
 
 if(menu == 1):
     plt.scatter(xx,yy, c=colors, s=sizes, alpha=0.9, cmap=party_colors.values())
-    
-    patchList = []
-    for key in party_colors:
-            if(key == 'null'): continue
-            data_key = mpatches.Patch(color=party_colors[key], label=key)
-            patchList.append(data_key)
-    
-    plt.legend(handles=patchList, bbox_to_anchor=(1, 1), prop={'size': 30})
+    img = np.array(colors).reshape((10,10))
+    add_legend(party_colors) 
     plt.title('Voting patterns for the Swedish parlament, 2004-2005', fontsize=36, y=1.05)
 
 if(menu == 2):
-    # plt.scatter(xx,yy, c=boys_c, s=160, alpha=1, marker='s')
-    # plt.scatter(xx,yy, c=girls_c, s=girl_size, alpha=0.5)
-    img = np.zeros(10,10)
-
+    plt.scatter(xx,yy, c=boys_c, s=boy_size, alpha=0.8, marker="D")
+    plt.scatter(xx,yy, c=girls_c, s=girl_size, alpha=0.8)
+    add_legend(sex_colors)
+    plt.title('MP gender cluster based on voting, 2004-2005', fontsize=36, y=1.05)
 
 ax = plt.gca()
-ax.set_aspect('equal', adjustable='box')
+ax.set_aspect('equal')
 ax.set_xticks(np.arange(0, 10, 1))
 ax.set_yticks(np.arange(0, 10, 1))
-ax.set_xticklabels(np.arange(0, 10, 1))
-ax.set_yticklabels(np.arange(0, 10, 1))
+ax.set_xticklabels(np.arange(0, 10, 1), fontsize=18)
+ax.set_yticklabels(np.arange(0, 10, 1), fontsize=18)
 plt.show()
 
