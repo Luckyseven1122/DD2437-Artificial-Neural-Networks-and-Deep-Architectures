@@ -3,9 +3,19 @@ import matplotlib.pyplot as plt
 from src.Network import Network
 from src.Optimizer import LeastSquares, DeltaRule
 from src.Initializer import RandomNormal
-from src.Centroids import Fixed, VanillaCL
+from src.Centroids import Fixed, VanillaCL, LeakyCL
 from src.Plotter import plot_centroids_1d
 from src.Perceptron import Perceptron
+
+
+def ballistic_data():
+    t = np.fromfile('./data_lab2/ballist.dat', sep=" ").reshape(100, 4)
+    tt = np.fromfile('./data_lab2/balltest.dat', sep=" ").reshape(100, 4)
+
+    training = {'X': t[:,0:2], 'Y': t[:,2:4]}
+    test = {'X': tt[:,0:2], 'Y': tt[:,2:4]}
+
+    return training, test
 
 def save_data(data_sting, path):
     with open(path, 'w+') as file:
@@ -69,6 +79,8 @@ def generate_data_task31(func, noise_std):
 
     return {'X': train_X, 'Y': train_Y}, {'X': test_X, 'Y': test_Y}, {'X': test_X_clean, 'Y': test_Y_clean}
 
+def generate_data_task33():
+    pass
 
 def task31():
     training, testing, _ = generate_data_task31(lambda x:square(np.sin(x)), 0)
@@ -146,61 +158,128 @@ def task32():
             save_data(data['config'] + '\n\nresidual error (noisy)=' + str(residual_error_noisy) + '\nresidual error clean=' + str(residual_error_clean) , path + '.txt')
 
 def task33():
-    training, testing, testing_clean = generate_data_task31(lambda x:np.sin(x), 0.1)
+    N_units = [{'N': 8, 'name': 'Tight', 'sigma': 0.5},
+               {'N': 12,'name': 'task31', 'sigma': 1.0}]
 
-    sigma = [0.1, 0.3, 0.5, 1.0, 1.3]
-    tests = [1, 2, 3, 4] # weak, tighter, random
+    noise = [0, 0.1]
 
-    N_hidden_nodes = 6
-    centroids = VanillaCL(np.empty((training['X'].shape[1], N_hidden_nodes)), space=[0, 2*np.pi])
+    for std in noise:
+        training, testing, testing_clean = generate_data_task31(lambda x:np.sin(x), std)
+        for hidden_layer in N_units:
+            #centroids = VanillaCL(np.empty((training['X'].shape[1], hidden_layer['N'])), space=[0, 2*np.pi], eta=0.001)
+            centroids = LeakyCL(np.empty((training['X'].shape[1], hidden_layer['N'])), space=[0, 2*np.pi], eta=0.001)
 
+            RadialBasisNetwork = Network(X=training['X'],
+                                         Y=training['Y'],
+                                         sigma=hidden_layer['sigma'],
+                                         hidden_nodes=hidden_layer['N'],
+                                         centroids=centroids,
+                                         initializer=RandomNormal(std=0.1))
+
+            data = RadialBasisNetwork.train(epochs=10000,
+                                            epoch_shuffle=True,
+                                            #optimizer=LeastSquares())
+                                            optimizer=DeltaRule(eta=0.001))
+
+            prediction_noisy, residual_error_noisy = RadialBasisNetwork.predict(testing['X'], testing['Y'])
+            prediction_clean, residual_error_clean = RadialBasisNetwork.predict(testing_clean['X'], testing_clean['Y'])
+
+            print('residual error', residual_error_clean)
+            print('residual error (noisy)', residual_error_noisy)
+
+            plt.clf()
+            plt.plot(testing['X'], testing['Y'], label='True')
+            plt.plot(testing['X'], prediction_noisy, label='Prediction (noise)')
+            #plt.plot(testing_clean['X'], prediction_clean, label='Prediction (no noise)')
+            #plt.ylabel('sign(sin(2x))')
+            plt.ylabel('sin(2x)')
+            plt.xlabel('x')
+            plt.scatter(centroids.get_matrix(), np.zeros(hidden_layer['N']).reshape(-1,1).T)
+            plt.legend(loc='upper right')
+            plot_centroids_1d(centroids, hidden_layer['sigma'])
+            #plt.show()
+
+            path = './figures/task3.3/sin(2x)_sigma=' + str(hidden_layer['sigma']) + '_set=' + hidden_layer['name'] + '_noise=' + str(std)
+            plt.savefig(path + '.png')
+            print(data['config'])
+            save_data(data['config'] + '\n\nresidual error (noisy)=' + str(residual_error_noisy) + '\nresidual error clean=' + str(residual_error_clean) , path + '.txt')
+
+            plt.clf()
+            plt.plot(np.arange(0, len(data['t_loss'])), data['t_loss'], label='training loss')
+            plt.xlabel('Epochs')
+            plt.ylabel('Total approximation error')
+            plt.legend(loc='upper right')
+            plt.savefig(path + '_learning.png')
+
+def task333():
+    training, testing = ballistic_data()
+    #plt.scatter(testing['X'][:,0], testing['Y'][:,0], label='col1')
+    #plt.scatter(testing['X'][:,1], testing['Y'][:,1], label='col2')
+    #plt.legend()
+    #plt.show()
+    N_hidden_nodes = 10
+    sigma = 0.3248
+    eta = 0.1
+    eta_hidden = 0.02
+
+
+    centroids = LeakyCL(matrix=np.empty((training['X'].shape[1], N_hidden_nodes)),
+                        space=[0, 2/np.sqrt(training['X'].shape[1])],
+                        eta=eta_hidden)
 
     RadialBasisNetwork = Network(X=training['X'],
                                  Y=training['Y'],
-                                 sigma=1.0,
+                                 sigma=sigma,
                                  hidden_nodes=N_hidden_nodes,
                                  centroids=centroids,
                                  initializer=RandomNormal(std=0.1))
 
-    data = RadialBasisNetwork.train(epochs=1000,
+    data = RadialBasisNetwork.train(epochs=2000,
                                     epoch_shuffle=True,
                                     #optimizer=LeastSquares())
-                                    optimizer=DeltaRule(eta=0.001))
+                                    optimizer=DeltaRule(eta=eta))
 
-    prediction_noisy, residual_error_noisy = RadialBasisNetwork.predict(testing['X'], testing['Y'])
-    prediction_clean, residual_error_clean = RadialBasisNetwork.predict(testing_clean['X'], testing_clean['Y'])
+    prediction, residual_error = RadialBasisNetwork.predict(testing['X'], testing['Y'])
+    print('residual error:',residual_error)
 
-    print('residual error', residual_error_clean)
-    print('residual error (noisy)', residual_error_noisy)
+    path = './figures/task3.3/ballist_N=' + str(N_hidden_nodes) + '_eta=' + str(eta) + '_sigma=' + str(sigma)
+
+
+    padding = 0.1
+    min = prediction[:,0].min() - padding if prediction[:,0].min() < testing['Y'][:,0].min() else testing['Y'][:,0].min() - padding
+    max = prediction[:,0].max() + padding if prediction[:,0].max() > testing['Y'][:,0].max() else testing['Y'][:,0].max() + padding
     plt.clf()
-    plt.plot(testing['X'], testing['Y'], label='True')
-    plt.plot(testing['X'], prediction_noisy, label='Prediction (noise)')
-    #plt.plot(testing_clean['X'], prediction_clean, label='Prediction (no noise)')
-    #plt.ylabel('sign(sin(2x))')
-    plt.ylabel('sin(2x)')
-    plt.xlabel('x')
-    #plt.scatter(N_hidden_nodes, np.zeros(N_hidden_nodes))
-    plt.legend(loc='upper right')
-    plot_centroids_1d(centroids,1.0)
-    plt.show()
+    plt.axis([min, max, min, max])
+    plt.plot([min, max], [min, max], '--k', linewidth=1, dashes=(5, 10))
+    plt.scatter(prediction[:,0], testing['Y'][:,0], marker='x')
+    plt.title('Angle/Distance')
+    plt.ylabel('True')
+    plt.xlabel('Predicted')
+    plt.savefig(path + '_angledistance.png')
 
-    path = './figures/task3.2/sin(2x)_sig=' + str(1.0) + '_set=' + 'SimpleCL'
-    #plt.savefig(path + '.png')
+    padding = 0.1
+    min = prediction[:,1].min() - padding if prediction[:,1].min() < testing['Y'][:,1].min() else testing['Y'][:,1].min() - padding
+    max = prediction[:,1].max() + padding if prediction[:,1].max() > testing['Y'][:,1].max() else testing['Y'][:,1].max() + padding
+    plt.clf()
+    plt.axis([min, max, min, max])
+    plt.plot([min, max], [min, max], '--k', linewidth=1, dashes=(5, 10))
+    plt.scatter(prediction[:,1], testing['Y'][:,1], marker='x')
+    plt.title('Velocity/Height')
+    plt.ylabel('True')
+    plt.xlabel('Predicted')
+    plt.savefig(path + '_velocityheight.png')
+
     print(data['config'])
-    #save_data(data['config'] + '\n\nresidual error (noisy)=' + str(residual_error_noisy) + '\nresidual error clean=' + str(residual_error_clean) , path + '.txt')
+    save_data(data['config'] + '\n\nresidual error=' + str(residual_error), path + '.txt')
 
-def perceptron():
-    training, testing = generate_data_task31(lambda x:np.sin(x), 0)
-    rbf_nodes, N_hidden_nodes = get_radial_coordinates(1)
-    eta = 0.000001
-    w, c = Perceptron(eta).train(inputs = training['X'], labels = training['Y'], W = rbf_nodes, epochs = 10000)
+    plt.clf()
+    plt.plot(np.arange(0, len(data['t_loss'])), data['t_loss'], label='training loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Total approximation error')
+    plt.legend(loc='upper right')
+    plt.savefig(path + '_learning.png')
 
-    x = training['X']
-    y_preds = np.sum(x * w, axis=1)
-    plt.plot(x, y_preds)
-    plt.show()
-
-# perceptron()
 #task31()
 #task32()
-task33()
+#task33()
+task333()

@@ -17,6 +17,10 @@ class Optimizer:
     def output(self, fi, W):
         return np.dot(fi, W)
 
+    def set_dims(self, N, M, O):
+        self._N = N
+        self._M = M
+        self._O = O
 
 class LeastSquares(Optimizer):
     def __init__(self):
@@ -44,8 +48,9 @@ class DeltaRule(Optimizer):
         Instantanious error for X_k
         '''
         fi = fi.reshape(-1, 1)
-        y = np.dot(fi.T, W)
-        return float((((Y-y)**2)/2))
+        Y = Y.reshape(1,-1)
+        y = np.dot(fi.T, W).reshape(1,-1)
+        return np.sum(((Y-y)**2)/2)
 
 
 def test():
