@@ -1,5 +1,5 @@
 import numpy as np
-import itertools
+from sympy.utilities.iterables import multiset_permutations
 import matplotlib.pyplot as plt
 
 
@@ -11,9 +11,10 @@ noisy = np.array([[ 1,-1, 1,-1, 1,-1,-1, 1],
                   [ 1, 1,-1,-1,-1, 1,-1,-1],
                   [ 1, 1, 1,-1, 1, 1,-1, 1]])
 
+
 # clean = np.array(list(itertools.product([-1, 1], repeat=8)))
 
-def little_model(X, epochs=30):
+def little_model(X):
     P = X.shape[0] # P patterns
     N = X.shape[1] # N Units
     W = np.zeros((N,N))
@@ -22,38 +23,25 @@ def little_model(X, epochs=30):
         x = X[p,None,:]
         W += np.outer(x,x)
     return W
-    # for e in range(epochs):
-    #     for i in range(P):
-    #         x = X[i,None,:]
-    #         W += np.outer(x, x)
-    #     W[np.diag_indices(N)] = 0
-    #     for i in range(P):
-    #         x = X[i,None,:]
-    #         X[i,None,:] = np.sign(np.dot(x, W.T))
-    # return W
 
 
-def recall(data, W):
+
+def recall(data, W, steps):
     P = data.shape[0]
-    c = 0
-    steps = 3
     for i in range(steps):
-        data = np.sign(np.dot(data, W))
-
+        data = np.sign(np.dot(data, W.T))
     return data.astype(int)
 
 
-W = little_model(clean.copy(), epochs=2000)
-ans = recall(noisy, W)
+W = little_model(clean.copy())
+ans = recall(noisy, W, steps=3)
 # print('org', clean)
 
 diffing = 0
 for n, c in zip(ans, clean):
-    diff = sum(abs(n-c))
     print(n, c)
-    if(diff > 0):
+    if not ((n == c).all()):
         diffing += 1
 print('different: ', diffing)
 
 # recall(data, W)
-
