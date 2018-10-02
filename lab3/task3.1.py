@@ -18,11 +18,9 @@ def little_model(X, epochs=1):
     for e in range(epochs):
         for i in range(P):
             x = X[i,None,:]
-            # Calculate weights
             W += np.outer(x, x)
         W[np.diag_indices(N)] = 0
         for i in range(P):
-            # Get next X
             x = X[i,None,:]
             X[i,None,:] = np.sign(np.dot(x, W.T))
     return W
