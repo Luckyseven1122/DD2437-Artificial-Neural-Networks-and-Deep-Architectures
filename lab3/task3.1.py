@@ -17,13 +17,14 @@ def little_model(X, epochs=1):
     W = np.zeros((N,N))
     for e in range(epochs):
         for i in range(P):
-            x = X[i,:,None]
+            x = X[i,None,:]
             # Calculate weights
             W += np.outer(x, x)
+        W[np.diag_indices(N)] = 0
         for i in range(P):
             # Get next X
-            x = X[i,:,None]
-            X[i,:,None] = np.sign(np.dot(W.T, x))
+            x = X[i,None,:]
+            X[i,None,:] = np.sign(np.dot(x, W.T))
     return W
 
 def recall(data, W):
@@ -34,5 +35,5 @@ def recall(data, W):
         print('recall:', np.where(x > 0, 1, -1))
 
 
-W = little_model(clean.copy())
-recall(clean, W)
+W = little_model(clean.copy(), epochs=2000)
+recall(noisy, W)
