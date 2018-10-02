@@ -10,6 +10,11 @@ noisy = np.array([[ 1,-1, 1,-1, 1,-1,-1, 1],
                   [ 1, 1,-1,-1,-1, 1,-1,-1],
                   [ 1, 1, 1,-1, 1, 1,-1, 1]])
 
+noisy2 = np.array([[-1,1, -1,1, -1,1,-1, 1],
+                   [1,1,-1,1,-1, 1,1,1],
+                   [1, -1, -1,1,-1, -1,-1, 1]])
+
+
 def int_to_array(number):
     '''
     converts numbers in range 0 to 255 into lists
@@ -47,14 +52,15 @@ def recall(data, W, steps):
 
 W = little_model(clean.copy())
 
-'''
+ans = recall(noisy2, W, steps=901)
 diffing = 0
 for n, c in zip(ans, clean):
-    #print(n, c)
+    print(n, c)
     if not ((n == c).all()):
         diffing += 1
-'''
+print(diffing)
 
+'''
 obj = {}
 for i in range(255):
     ans = recall(int_to_array(i), W, steps=4)
@@ -64,5 +70,5 @@ for i in range(255):
         obj[str(ans)] = 1
 
 print(json.dumps(obj, indent=2, sort_keys=True), len(obj.keys()))
-
+'''
 # recall(data, W)
