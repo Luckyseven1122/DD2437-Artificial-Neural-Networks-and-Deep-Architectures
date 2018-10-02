@@ -87,9 +87,9 @@ class Network:
 
         # Adjust batch for sample or batch learning based on optimizer
         batch_idx = [np.arange(0, self.n_samples)] if self.optimizer.__name__ == 'LeastSquares' else list(range(0,self.n_samples))
-        #plt.axis([-0.01, 1, -0.01, 1])
-        #plt.scatter(self.Y[:,0], self.X[:,0], marker='x', label='angle/distances', alpha=0.7)
-        #plt.scatter(self.Y[:,1], self.X[:,1], marker='x', label='velocity/height', alpha=0.7)
+        plt.axis([-2, 6, -2, 6])
+        plt.scatter(self.X[:,0], self.Y[:,0], marker='x', label='angle/distances', alpha=0.7)
+        plt.scatter(self.X[:,1], self.Y[:,1], marker='x', label='velocity/height', alpha=0.7)
         for e in range(epochs):
             loss = 0
 
@@ -106,23 +106,23 @@ class Network:
             self.training_loss.append(loss)
             print('loss:', loss)
 
-            #if (e % 10) == 0:
-            #    m = self.centroids.get_matrix()
-            #    plt.scatter(m[0,:], m[1,:], color='blue', alpha=0.2)
+            if (e % 100) == 0:
+                m = self.centroids.get_matrix()
+                plt.scatter(m[0,:], m[1,:], color='blue', alpha=0.2)
 
-        #m = self.centroids.get_matrix()
-        #plt.scatter(m[0,:], m[1,:], color='blue', label='RBF Node')
-        #fig = plt.gcf()
-        #ax = fig.gca()
-        #for i in range(m.shape[1]):
-        #    circle = plt.Circle((m[0,i], m[1,i]), self.sigma, color='r')
-        #    circle.set_clip_box(ax.bbox)
-        #    circle.set_edgecolor( 'r' )
-        #    circle.set_facecolor( 'none' )
-        #    circle.set_alpha( 0.5 )
-        #    ax.add_artist(circle)
-        #plt.legend()
-        #plt.show()
+        m = self.centroids.get_matrix()
+        plt.scatter(m[0,:], m[1,:], color='blue', label='RBF Node')
+        fig = plt.gcf()
+        ax = fig.gca()
+        for i in range(m.shape[1]):
+            circle = plt.Circle((m[0,i], m[1,i]), self.sigma, color='r')
+            circle.set_clip_box(ax.bbox)
+            circle.set_edgecolor( 'r' )
+            circle.set_facecolor( 'none' )
+            circle.set_alpha( 0.5 )
+            ax.add_artist(circle)
+        plt.legend()
+        plt.show()
 
         return self._pack_data_object(epochs)
 

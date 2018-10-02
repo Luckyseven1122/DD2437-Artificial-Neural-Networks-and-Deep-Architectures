@@ -218,13 +218,13 @@ def task333():
     #plt.legend()
     #plt.show()
     N_hidden_nodes = 10
-    sigma = 0.3248
+    sigma = 0.1
     eta = 0.1
     eta_hidden = 0.02
 
 
     centroids = LeakyCL(matrix=np.empty((training['X'].shape[1], N_hidden_nodes)),
-                        space=[0, 2/np.sqrt(training['X'].shape[1])],
+                        space=[-0.1, 0.9],
                         eta=eta_hidden)
 
     RadialBasisNetwork = Network(X=training['X'],
