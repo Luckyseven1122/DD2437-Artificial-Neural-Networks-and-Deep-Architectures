@@ -1,7 +1,6 @@
 import numpy as np
-from sympy.utilities.iterables import multiset_permutations
 import matplotlib.pyplot as plt
-
+import json
 
 clean = np.array([[-1,-1, 1,-1, 1,-1,-1, 1],
                   [-1,-1,-1,-1,-1, 1,-1,-1],
@@ -11,6 +10,18 @@ noisy = np.array([[ 1,-1, 1,-1, 1,-1,-1, 1],
                   [ 1, 1,-1,-1,-1, 1,-1,-1],
                   [ 1, 1, 1,-1, 1, 1,-1, 1]])
 
+def int_to_array(number):
+    '''
+    converts numbers in range 0 to 255 into lists
+    '''
+    assert number < 256 and number >= 0
+    res = []
+    for i in range(8):
+        res.append(1)
+        if (number & 128) == 0:
+            res[-1] = -1
+        number = number << 1
+    return np.array(res).reshape(1,-1)
 
 # clean = np.array(list(itertools.product([-1, 1], repeat=8)))
 
@@ -22,6 +33,7 @@ def little_model(X):
     for p in range(P):
         x = X[p,None,:]
         W += np.outer(x,x)
+    W[np.diag_indices(N)] = 0
     return W
 
 
@@ -34,14 +46,23 @@ def recall(data, W, steps):
 
 
 W = little_model(clean.copy())
-ans = recall(noisy, W, steps=3)
-# print('org', clean)
 
+'''
 diffing = 0
 for n, c in zip(ans, clean):
-    print(n, c)
+    #print(n, c)
     if not ((n == c).all()):
         diffing += 1
-print('different: ', diffing)
+'''
+
+obj = {}
+for i in range(255):
+    ans = recall(int_to_array(i), W, steps=4)
+    if str(ans) in obj:
+        obj[str(ans)] += 1
+    else:
+        obj[str(ans)] = 1
+
+print(json.dumps(obj, indent=2, sort_keys=True), len(obj.keys()))
 
 # recall(data, W)
