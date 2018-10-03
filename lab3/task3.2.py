@@ -25,10 +25,8 @@ def show_pics(pics, title):
 #show_pics(pics[0,:], 'first') # for one pic
 #show_pics(pics[0:4,:], '0-4') # a set of pics
 
-def energy(X, W):
-    assert X.shape[0] == 1
-    _X = np.dot(X.T, X)
-    return -np.sum(np.sum(W * _X))
+def energy(x, W):
+    return - np.einsum('ij,i,j', W, x, x) / 2
 
 
 
@@ -51,29 +49,24 @@ def recall_sequential(X, W, steps):
     for _ in range(steps):
         for p in range(X.shape[0]):
             for i in range(X.shape[1]):
-                #idx = np.random.randint(X.shape[1])
-                # X[p,i] = np.sign(np.dot(W[i,:] * X[p,i]))
                 a_i = 0
                 for j in range(X.shape[1]):
                     if(i == j):
                         continue
                     a_i += W[i][j] * X[p][j]
-                    # print(W[i][j], 'pattern: ', X[p][j])
-                # print('one done update neuron: ', i, ' new value: ', a_i)
                 x_new = np.sign(a_i)
                 x_old = X[p][i]
                 s = a_i
-                E = -(x_new - np.sign(x_old)) * s
+                E = energy(X[0], W)
                 print('energy: ', E)
                 X[p][i] = np.sign(a_i)
-
     return X.astype(int)
 
 
 
 
-W = little_model(pics[0:2,:])
-ans = recall_sequential(pics[9,None,:], W, steps=3)
+W = little_model(pics[0:3,:])
+ans = recall_sequential(pics[10,None,:], W, steps=3)
 
 show_pics(pics[0:3,:], 'Before 0-3')
 show_pics(ans, 'Recall: 0-3')
