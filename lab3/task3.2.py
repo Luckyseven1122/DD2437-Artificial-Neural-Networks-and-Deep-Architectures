@@ -7,9 +7,10 @@ with open('pict.dat') as f:
     pics = np.fromfile(f, sep=',')
     pics = pics.reshape(11, 1024)
 
-def show_pics(pics):
+def show_pics(pics, title):
     n_pics = pics.shape[0]
     fig, ax = plt.subplots(1, n_pics)
+    plt.suptitle(title)
     for i in range(n_pics):
         pic = pics[i, :].reshape(32, 32)
         plt.subplot(1, n_pics, i+1)
@@ -17,17 +18,26 @@ def show_pics(pics):
         gca.axes.get_yaxis().set_visible(False)
         gca.axes.get_xaxis().set_visible(False)
         plt.imshow(pic)
+
     plt.show()
 
-#show_pics(pics) # all pics
-#show_pics(pics[0,:]) # for one pic
-#show_pics(pics[0:4,:]) # a set of pics
+show_pics(pics, 'all') # all pics
+#show_pics(pics[0,:], 'first') # for one pic
+#show_pics(pics[0:4,:], '0-4') # a set of pics
+
+def energy(X, W):
+    assert X.shape[0] == 1
+    _X = np.dot(X.T, X)
+    return -np.sum(np.sum(W * _X))
+
+
 
 def little_model(X):
     P = X.shape[0] # P patterns
     N = X.shape[1] # N Units
     W = np.zeros((N,N))
-
+    print('Number of patterns:', P)
+    print('Number of units:', N)
     for p in range(P):
         x = X[p,None,:]
         W += np.outer(x,x)
@@ -36,8 +46,19 @@ def little_model(X):
 
 
 
-def recall(data, W, steps):
-    P = data.shape[0]
-    for i in range(steps):
-        data = np.sign(np.dot(data, W.T))
-    return data.astype(int)
+def recall_sequential(X, W, steps):
+    for _ in range(steps):
+        for p in range(X.shape[0]):
+            for i in range(X.shape[1]):
+                print(X[p,i].shape)
+                #idx = np.random.randint(X.shape[1])
+                X[p,i,None] = np.sign(np.dot(W[i,:,None], X[p,i,None].T))
+    return X.astype(int)
+
+
+#show_pics(pics[0:3,:], 'Before 0-3')
+
+W = little_model(pics[0:3,:])
+ans = recall_sequential(pics[0:3,:], W, steps=4)
+
+show_pics(ans, 'Recall: 0-3')
