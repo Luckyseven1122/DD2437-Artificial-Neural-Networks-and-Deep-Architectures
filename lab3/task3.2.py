@@ -21,7 +21,7 @@ def show_pics(pics, title):
 
     plt.show()
 
-show_pics(pics, 'all') # all pics
+#show_pics(pics, 'all') # all pics
 #show_pics(pics[0,:], 'first') # for one pic
 #show_pics(pics[0:4,:], '0-4') # a set of pics
 
@@ -51,13 +51,14 @@ def recall_sequential(X, W, steps):
         for p in range(X.shape[0]):
             for i in range(X.shape[1]):
                 #idx = np.random.randint(X.shape[1])
-                X[p,i] = np.sign(np.sum(np.dot(W[i,:], X[p,i])))
+                X[p,i] = np.sign(np.sum(W[i,:] * X[p,i]))
     return X.astype(int)
 
 
-#show_pics(pics[0:3,:], 'Before 0-3')
+
 
 W = little_model(pics[0:3,:])
-ans = recall_sequential(pics[0:3,:], W, steps=4)
+ans = recall_sequential(pics[9,None,:], W, steps=1000)
 
+show_pics(pics[0:3,:], 'Before 0-3')
 show_pics(ans, 'Recall: 0-3')
