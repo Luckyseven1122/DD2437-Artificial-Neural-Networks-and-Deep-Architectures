@@ -50,9 +50,8 @@ def recall_sequential(X, W, steps):
     for _ in range(steps):
         for p in range(X.shape[0]):
             for i in range(X.shape[1]):
-                print(X[p,i].shape)
                 #idx = np.random.randint(X.shape[1])
-                X[p,i,None] = np.sign(np.dot(W[i,:,None], X[p,i,None].T))
+                X[p,i] = np.sign(np.sum(np.dot(W[i,:], X[p,i])))
     return X.astype(int)
 
 
