@@ -2,19 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 
-def int_to_array(number):
-    '''
-    converts numbers in range 0 to 255 into lists
-    '''
-    assert number < 256 and number >= 0
-    res = []
-    for i in range(8):
-        res.append(1)
-        if (number & 128) == 0:
-            res[-1] = -1
-        number = number << 1
-    return np.array(res).reshape(1,-1)
-
 pics = None
 with open('pict.dat') as f:
     pics = np.fromfile(f, sep=',')
@@ -47,8 +34,6 @@ def little_model(X):
     P = X.shape[0] # P patterns
     N = X.shape[1] # N Units
     W = np.zeros((N,N))
-    W = np.random.normal(0, 2, W.shape)
-    #W = 0.5*(W+W.T)
     print('Number of patterns:', P)
     print('Number of units:', N)
     for p in range(P):
@@ -67,64 +52,37 @@ def save_snapshot(X, iter, energy):
     plt.imshow(X.reshape(32,32))
     plt.savefig('./figures/' + str(iter) + '.png')
 
-def recall_sequential(X, W, steps, random = False):
-    X, W = X.copy(), W.copy()
+def recall_sequential(X, W, steps):
     E = 0
     counter = 0
-    # save_snapshot(X, counter, E)
-    eng_saved = []
     #save_snapshot(X, counter, E)
     for _ in range(steps):
         for p in range(X.shape[0]):
-            # E = energy(X[0], W)
-            # eng_saved.append(E)
-            # print('energy: ', E)
+            E = energy(X[0], W)
+            print('energy: ', E)
             for i in range(X.shape[1]):
                 a_i = 0
-                idx = np.random.randint(X.shape[1]) if random else i
+                #idx = np.random.randint(X.shape[1])
+                idx = i
                 for j in range(X.shape[1]):
                     if(idx == j):
                         continue
                     a_i += W[idx][j] * X[p][j]
+                x_new = np.sign(a_i)
+                x_old = X[p][idx]
+                s = a_i
                 X[p][idx] = np.sign(a_i)
                 counter += 1
-
-                E = energy(X[0], W)
-                eng_saved.append(E)
-                if (counter % 100) == 0:
-                    pass
+                #if (counter % 100) == 0:
                     #save_snapshot(X, counter, energy(X[0], W))
-
 
     return X.astype(int)
 
-def task3_3_plot_energy():
-
-    W = little_model(pics[0:3,:])
-    steps = 10
-    ans_rand, eng_rand = recall_sequential(pics[9,None,:], W, steps=steps, random=True)
-    ans_seq, eng_seq = recall_sequential(pics[9,None,:], W, steps=steps, random=False)
-
-    x = np.arange(len(eng_rand))
-    
-    font = {'family' : 'normal',
-            'size'   : 18}
-    
-    plt.rc('font', **font)
-    plt.title('Sequential Recall Energy')
-    plt.plot(x, eng_rand, label='Random index')
-    plt.plot(x, eng_seq, label='Sequential index')
-    plt.legend()
-    plt.show()
 
 
-# W = little_model(pics[0:3,:])
-# steps = 10
-# ans_rand, eng_rand = recall_sequential(pics[9,None,:], W, steps=steps, random=True)
-# ans_seq, eng_seq = recall_sequential(pics[9,None,:], W, steps=steps, random=False)
 
 W = little_model(pics[0:3,:])
-ans = recall_sequential(pics[0,None,:], W, steps=10)
+ans = recall_sequential(pics[10,None,:], W, steps=10)
 
-# show_pics(pics, 'all')
-# show_pics(ans, 'Recall: 0-3')
+show_pics(pics[0:3,:], 'Before 0-3')
+show_pics(ans, 'Recall: 0-3')
