@@ -55,12 +55,14 @@ def save_snapshot(X, iter, energy):
 def recall_sequential(X, W, steps):
     E = 0
     counter = 0
+    e = []
     #save_snapshot(X, counter, E)
     for _ in range(steps):
         for p in range(X.shape[0]):
             E = energy(X[0], W)
             print('energy: ', E)
             for i in range(X.shape[1]):
+                e.append(energy(X[0], W))
                 a_i = 0
                 #idx = np.random.randint(X.shape[1])
                 idx = i
@@ -76,13 +78,27 @@ def recall_sequential(X, W, steps):
                 #if (counter % 100) == 0:
                     #save_snapshot(X, counter, energy(X[0], W))
 
-    return X.astype(int)
+    return e
 
 
 
 
 W = little_model(pics[0:3,:])
+W = np.random.normal(0, 1, W.shape)
+Wsym = 0.5 * (W * W.T)
+print('asym')
 ans = recall_sequential(pics[10,None,:], W, steps=10)
+print('sym')
+an = recall_sequential(pics[10,None,:], Wsym, steps=10)
 
-show_pics(pics[0:3,:], 'Before 0-3')
-show_pics(ans, 'Recall: 0-3')
+plt.plot(np.arange(0, len(ans)), ans, label="Asymmetric W")
+plt.plot(np.arange(0, len(an )), an , label="Symmetric W")
+plt.title('Energy on W with normal distribution')
+plt.ylabel('Energy')
+plt.xlabel('iteration')
+plt.legend()
+plt.show()
+
+#show_pics(pics[0:3,:], 'Before 0-3')
+#show_pics(ans, 'Recall: 0-3')
+#show_pics(an, 'Recall: 0-3')
