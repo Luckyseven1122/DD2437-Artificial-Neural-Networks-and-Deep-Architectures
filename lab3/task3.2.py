@@ -96,28 +96,49 @@ def recall_sequential(X, W, steps, random = False):
                     #save_snapshot(X, counter, energy(X[0], W))
 
 
-    return X.astype(int)
+    return X.astype(int), eng_saved
 
 def task3_3_plot_energy():
-
     W = little_model(pics[0:3,:])
     steps = 10
     ans_rand, eng_rand = recall_sequential(pics[9,None,:], W, steps=steps, random=True)
     ans_seq, eng_seq = recall_sequential(pics[9,None,:], W, steps=steps, random=False)
 
     x = np.arange(len(eng_rand))
+     
+    plt.subplot(121)
+    plt.ylabel('Energy')
+    plt.xlabel('iteration')
+
+    plt.title('Sequential and Random sampling recall')
+    plt.plot(x, eng_rand, label='Random sampling')
+    plt.plot(x, eng_seq, label='Sequential sampling')
+
+    plt.ylabel('Energy')
+    plt.xlabel('iteration')
+
+    plt.legend()
+
+    plt.subplot(122)
+
+    W = np.random.normal(0, 1, W.shape)
+    Wsym = 0.5 * (W * W.T)
+    print('asym')
+    _,ans = recall_sequential(pics[9,None,:], W, steps=10)
+    print('sym')
+    _,an = recall_sequential(pics[9,None,:], Wsym, steps=10)
     
-    font = {'family' : 'normal',
-            'size'   : 18}
-    
-    plt.rc('font', **font)
-    plt.title('Sequential Recall Energy')
-    plt.plot(x, eng_rand, label='Random index')
-    plt.plot(x, eng_seq, label='Sequential index')
+    plt.plot(np.arange(0, len(ans)), ans, label="Asymmetric W")
+    plt.plot(np.arange(0, len(an )), an , label="Symmetric W")
+    plt.title('Energy on W with normal distribution')
+    plt.ylabel('Energy')
+    plt.xlabel('iteration')
+
     plt.legend()
     plt.show()
 
 
+task3_3_plot_energy()
 # W = little_model(pics[0:3,:])
 # steps = 10
 # ans_rand, eng_rand = recall_sequential(pics[9,None,:], W, steps=steps, random=True)

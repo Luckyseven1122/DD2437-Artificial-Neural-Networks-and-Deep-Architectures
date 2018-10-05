@@ -70,9 +70,6 @@ def recall_sequential(X, W, steps):
                     if(idx == j):
                         continue
                     a_i += W[idx][j] * X[p][j]
-                x_new = np.sign(a_i)
-                x_old = X[p][idx]
-                s = a_i
                 X[p][idx] = np.sign(a_i)
                 counter += 1
                 #if (counter % 100) == 0:
@@ -84,6 +81,7 @@ def recall_sequential(X, W, steps):
 
 
 W = little_model(pics[0:3,:])
+
 W = np.random.normal(0, 1, W.shape)
 Wsym = 0.5 * (W * W.T)
 print('asym')
