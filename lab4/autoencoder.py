@@ -28,6 +28,7 @@ def autoencoder(inputs, hidden_size, reg_scale):
 
 
 def train(settings, batches, test_mnist):
+    loss_buff = []
     inputs = tf.placeholder(tf.float32, shape=[None, 784])
     outputs = autoencoder(inputs = inputs, 
                           hidden_size = settings['hidden_size'], 
@@ -39,26 +40,40 @@ def train(settings, batches, test_mnist):
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         
+        if(settings['interactive_plot']):
+            plt.show() 
+            plt.figure(figsize= settings['plot_dim'])
+
         for epoch in range(settings['epochs']):
             for batch_idx, batch in enumerate(batches):
                 feed = { inputs: batch }
                 if(batch_idx % 30 == 0):
                     _, cost = sess.run([optimizer, loss], feed_dict=feed)
-                optimizer.run(feed_dict=feed)
+                    
+                    if(settings['interactive_plot']):
+                        test_img = test_mnist[0:settings['batch_size']]
+                        r = sess.run(outputs, feed_dict={inputs: test_img})
+                        rows, cols = settings['plot_dim']
+                        plot.custom(data = r,rows=rows,cols=cols)
+
     
+                optimizer.run(feed_dict=feed)
             print('Epoch: ' + str(epoch) + ' Cost: ', cost)
-        test_img = test_mnist[0:settings['batch_size']]
-        reconstructed = sess.run(outputs, feed_dict={inputs: test_img})
-        
-        plot.custom(data = reconstructed, rows = 10, cols = 4)
+            loss_buff.append(cost)
+
+        if(settings['plot_cost']):
+            plot.loss(loss_buff)
     return 
 
 settings = {
     'hidden_size': 500,
     'num_batches': 50,
-    'epochs': 1,
+    'epochs': 50,
     'eta': 1e-3,
-    'reg_scale': 0.9
+    'reg_scale': 0.9,
+    'interactive_plot': False,
+    'plot_dim': (10,4),
+    'plot_cost': True
 }
 
 settings['batch_size'] = int(train_mnist.shape[0] / settings['num_batches'])
