@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import gridspec
-# plt.ion()
+plt.ion()
 
 class Plot():
     def __init__(self):
@@ -20,11 +20,11 @@ class Plot():
     def nine(self, data):
         assert data.shape == (9, 784)
         self.custom(data, 3,3)
-    
+
 #     def custom(self, data, rows, cols):
 #         gs = gridspec.GridSpec(rows, cols)
 #         gs.update(wspace=0, hspace=0)
-#         for i in range(rows*cols): 
+#         for i in range(rows*cols):
 #             ax = plt.subplot(gs[i])
 #             ax.set_xticklabels([])
 #             ax.set_yticklabels([])

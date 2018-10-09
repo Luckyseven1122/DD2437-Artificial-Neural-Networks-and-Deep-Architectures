@@ -28,7 +28,8 @@ class loader:
                             self.test_X.copy(),
                             self.test_Y.copy()).run()
                 except Exception as e:
-                    print('\n'+e)
+                    print()
+                    print(e)
             else:
                 break
 

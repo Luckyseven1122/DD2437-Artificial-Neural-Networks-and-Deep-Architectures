@@ -33,6 +33,9 @@ class network:
 
 
     def train(self, settings, batches, Y):
+
+        loss_buff = []
+
         inputs = tf.placeholder(tf.float32, shape=[None, 784])
         outputs = self.autoencoder(inputs = inputs,
                               hidden_size = settings['hidden_size'],
@@ -44,19 +47,30 @@ class network:
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
 
+            if(settings['interactive_plot']):
+                #plt.show()
+                plt.figure(figsize=settings['plot_dim'])
+
             for epoch in range(settings['epochs']):
                 for batch_idx, batch in enumerate(batches):
                     feed = { inputs: batch }
                     if(batch_idx % 30 == 0):
                         _, cost = sess.run([optimizer, loss], feed_dict=feed)
+
+                        if(settings['interactive_plot']):
+                            Y = Y[0:settings['batch_size']]
+                            r = sess.run(outputs, feed_dict={inputs: Y})
+                            rows, cols = settings['plot_dim']
+                            self.plot.custom(data = r,rows=rows,cols=cols)
+
                     optimizer.run(feed_dict=feed)
 
                 print('Epoch: ' + str(epoch) + ' Cost: ', cost)
-            Y = Y[0:settings['batch_size']]
-            reconstructed = sess.run(outputs, feed_dict={inputs: Y})
+                loss_buff.append(cost)
 
-            self.plot.custom(data = reconstructed, rows = 4, cols = 10)
-        return
+            if(settings['plot_cost']):
+                self.plot.loss(loss_buff)
+
 
     def run(self):
 
@@ -67,9 +81,12 @@ class network:
         settings = {
             'hidden_size': 500,
             'num_batches': 50,
-            'epochs': 9,
+            'epochs': 50,
             'eta': 1e-3,
-            'reg_scale': 0.9
+            'reg_scale': 0.9,
+            'interactive_plot': True,
+            'plot_dim': (10,4),
+            'plot_cost': True
         }
 
         settings['batch_size'] = int(X.shape[0] / settings['num_batches'])
