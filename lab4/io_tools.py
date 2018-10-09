@@ -10,10 +10,10 @@ def readFile(file):
         images = np.array(images)
         return images
 
-''' 
+'''
     8000 vectors with 784 1/0 in each.
     One image: 784 pixels = 28x28
-    returns test, train 
+    returns test, train
             np.array(8000, 784), np.array(2000, 784)
 '''
 def getBindigit():
@@ -21,10 +21,10 @@ def getBindigit():
     bindigit_tst = readFile('bindigit_tst.csv')
     return bindigit_trn, bindigit_tst
 
-''' 
+'''
     8000 vectors with 784 1/0 in each.
     One image: 784 pixels = 28x28
-    returns test, train 
+    returns test, train
             np.array(8000, 784), np.array(2000, 784)
 '''
 def getTargetDigit():
@@ -32,4 +32,3 @@ def getTargetDigit():
     targetdigit_tst = readFile('bindigit_tst.csv')
     print(targetdigit_trn.shape, targetdigit_tst.shape)
     return targetdigit_trn, targetdigit_tst
-
