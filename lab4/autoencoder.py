@@ -1,6 +1,6 @@
-import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
 import json
 import imp
 
@@ -18,6 +18,10 @@ class network:
         self.train_Y = Y
         self.test_X = test_X
         self.test_Y = test_Y
+        #tf = imp.reload(tf)
+
+    def __del__(self):
+        tf.reset_default_graph()
 
     def autoencoder(self, inputs, hidden_size, reg_scale):
         regularizer = tf.contrib.layers.l2_regularizer(scale=reg_scale)
@@ -62,6 +66,15 @@ class network:
                             rows, cols = settings['plot_dim']
                             self.plot.custom(data = r,rows=rows,cols=cols)
 
+                        if(settings['plot_weights']):
+                            W = [w for w in tf.trainable_variables() if w.name == 'fully_connected_1/weights:0'][0]
+                            W = sess.run(W.value())
+                            hidden = W.shape[0]
+                            nodes = W.shape[1]
+                            rows, cols = settings['plot_dim']
+                            assert rows*cols == hidden
+                            self.plot.custom(W, rows, cols, save={'path': epoch})
+
                     optimizer.run(feed_dict=feed)
 
                 print('Epoch: ' + str(epoch) + ' Cost: ', cost)
@@ -70,22 +83,31 @@ class network:
             if(settings['plot_cost']):
                 self.plot.loss(loss_buff)
 
+            if(settings['plot_weights']):
+                W = [w for w in tf.trainable_variables() if w.name == 'fully_connected_1/weights:0'][0]
+                W = sess.run(W.value())
+                hidden = W.shape[0]
+                nodes = W.shape[1]
+                rows, cols = settings['plot_dim']
+                assert rows*cols == hidden
+                self.plot.custom(W, rows, cols)
+
 
     def run(self):
-
         X = self.train_X
         Y = X[0:2000]
         X = X[0:2000]
 
         settings = {
-            'hidden_size': 500,
+            'hidden_size': 50,
             'num_batches': 50,
-            'epochs': 10,
+            'epochs': 100,
             'eta': 1e-3,
             'reg_scale': 0.9,
-            'interactive_plot': True,
-            'plot_dim': (10,4),
-            'plot_cost': True
+            'interactive_plot': False,
+            'plot_dim': (5,10),
+            'plot_cost': False,
+            'plot_weights': True,
         }
 
         settings['batch_size'] = int(X.shape[0] / settings['num_batches'])

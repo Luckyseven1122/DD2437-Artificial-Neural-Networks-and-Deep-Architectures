@@ -37,7 +37,7 @@ class Plot():
         plt.plot(x, loss)
         plt.show()
 
-    def custom(self, data, rows, cols):
+    def custom(self, data, rows, cols, save=None):
         plt.clf()
         render = np.zeros((rows*28, cols*28))
         for r in range(rows):
@@ -50,5 +50,8 @@ class Plot():
         ax.axes.get_yaxis().set_visible(False)
         ax.axes.get_xaxis().set_visible(False)
 
-        plt.pause(1e-12)
+        if save != None:
+            plt.savefig('./tmp/' + str(save['path']) + '.png')
+        else:
+            plt.pause(1e-12)
         # plt.show()
