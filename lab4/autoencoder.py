@@ -33,7 +33,6 @@ class network:
 
 
     def train(self, settings, batches, Y):
-
         loss_buff = []
 
         inputs = tf.placeholder(tf.float32, shape=[None, 784])
@@ -81,7 +80,7 @@ class network:
         settings = {
             'hidden_size': 500,
             'num_batches': 50,
-            'epochs': 50,
+            'epochs': 10,
             'eta': 1e-3,
             'reg_scale': 0.9,
             'interactive_plot': True,

@@ -2,7 +2,7 @@ from io_tools import get_training_data, get_testing_data
 import autoencoder as _encoder
 from autoencoder import network
 import imp
-import sys
+import sys, traceback
 
 class loader:
     def pad(self, x, prompt):
@@ -28,8 +28,10 @@ class loader:
                             self.test_X.copy(),
                             self.test_Y.copy()).run()
                 except Exception as e:
-                    print()
-                    print(e)
+                     print ("Exception in user code:")
+                     print ('-'*60)
+                     traceback.print_exc(file=sys.stdout)
+                     print ('-'*60)
             else:
                 break
 
