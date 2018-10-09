@@ -9,7 +9,7 @@ class Plot():
 
     def one(self, data):
         assert data.shape == (784,)
-        plt.imshow(data.reshape(28,28))
+        plt.imshow(data.reshape(28,28), cmap='gray')
         plt.show()
 
     def four(self, data):
@@ -46,7 +46,7 @@ class Plot():
                 row[:,c*28:(c+1)*28] = data[c*rows+r].reshape(28,28)
             render[r*28:(r+1)*28,:] = row
         ax = plt.gca()
-        plt.imshow(render)
+        plt.imshow(render, cmap='gray')
         ax.axes.get_yaxis().set_visible(False)
         ax.axes.get_xaxis().set_visible(False)
 

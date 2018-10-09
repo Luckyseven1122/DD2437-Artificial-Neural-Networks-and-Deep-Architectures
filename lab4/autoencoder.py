@@ -29,6 +29,7 @@ class network:
         x = tf.contrib.layers.fully_connected(
                 inputs,
                 hidden_size,
+                weights_initializer=tf.initializers.random_normal,
                 weights_regularizer=regularizer,
                 activation_fn=tf.nn.sigmoid)
 
@@ -109,12 +110,13 @@ class network:
                 assert rows*cols == hidden
                 self.plot.custom(W, rows, cols)
 
-
-    def run(self):
+    def do_loss(self):
         X = self.train_X
         labels = self.train_Y
-        Y = X[0:2000]
-        X = X[0:2000]
+        #Y = X[0:8000]
+        X = X[0:8000]
+
+
 
         idx = []
         counter = 0
@@ -129,8 +131,8 @@ class network:
             settings = {
                 'hidden_size': h,
                 'num_batches': 50,
-                'epochs': 100,
-                'eta': 1e-3,
+                'epochs': 30,
+                'eta': 1e-2,
                 'reg_scale': 0.0,
                 'interactive_plot': False,
                 'plot_dim': (2,10),
@@ -146,7 +148,50 @@ class network:
 
             batches = np.array(np.array_split(X, settings['num_batches']))
 
-            loss = self.train(settings, batches, Y)
+            loss = self.train(settings, batches, X)
             losses.append(loss)
 
-        self.plot.losses(losses, ['N=30','N=50','N=100','N=250','N=500'], save={'path':'epochs=100_eta=1e-3_reg=0'})
+        self.plot.losses(losses, ['N=30','N=50','N=100','N=250','N=500'], save={'path':'epochs=30_eta=1e-2_reg=1e-1'})
+
+    def single_run(self):
+        X = self.train_X
+        labels = self.train_Y
+        #Y = X[0:8000]
+        X = X[0:8000]
+
+
+        idx = []
+        counter = 0
+        for i in range(labels.size):
+            if labels[i] == counter:
+                idx.append(i)
+                counter += 1
+
+
+        settings = {
+            'hidden_size': 120,
+            'num_batches': 50,
+            'epochs': 30,
+            'eta': 1e-3,
+            'reg_scale': 0.9,
+            'interactive_plot': False,
+            'plot_dim': (12,10),
+            'plot_cost': False,
+            'plot_weights': True,
+            'plot_numbers': False,
+            'number_idx': idx,
+            'store_weights': True,
+            'calculate_avg_sparseness': True
+        }
+
+        settings['batch_size'] = int(X.shape[0] / settings['num_batches'])
+        print('SETTINGS: ', json.dumps(settings, indent=2))
+
+        batches = np.array(np.array_split(X, settings['num_batches']))
+
+        self.train(settings, batches, X)
+
+
+    def run(self):
+        self.single_run()
+        #self.do_loss()
