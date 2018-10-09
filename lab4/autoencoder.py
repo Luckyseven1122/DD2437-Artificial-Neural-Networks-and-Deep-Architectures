@@ -47,8 +47,16 @@ class network:
         loss = tf.reduce_mean(tf.square(inputs - outputs))
         optimizer = tf.train.AdamOptimizer(learning_rate=settings['eta']).minimize(loss)
 
+        saver = tf.train.Saver()
+
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
+
+            if settings['store_weights']:
+                try:
+                    save.restore(sess, "./data/__tfcache__/default.ckpt")
+                except:
+                    saver.save(sess, "./data/__tfcache__/default.ckpt")
 
             if(settings['interactive_plot']):
                 #plt.show()
@@ -64,7 +72,7 @@ class network:
                             Y = Y[0:settings['batch_size']]
                             r = sess.run(outputs, feed_dict={inputs: Y})
                             rows, cols = settings['plot_dim']
-                            self.plot.custom(data = r,rows=rows,cols=cols)
+                            self.plot.custom(data = r,rows=rows, cols=cols)
 
                         if(settings['plot_weights']):
                             W = [w for w in tf.trainable_variables() if w.name == 'fully_connected_1/weights:0'][0]
@@ -75,12 +83,21 @@ class network:
                             assert rows*cols == hidden
                             self.plot.custom(W, rows, cols, save={'path': epoch})
 
+                        if(settings['plot_numbers']):
+                            ans = Y[settings['number_idx']]
+                            org = self.train_X[settings['number_idx']]
+                            ans = sess.run(outputs, feed_dict={inputs: ans})
+                            piz = np.concatenate((org, ans), axis=0)
+                            rows, cols = settings['plot_dim']
+                            self.plot.custom(data=piz, rows=rows, cols=cols, save={'path': epoch})
+
                     optimizer.run(feed_dict=feed)
 
                 print('Epoch: ' + str(epoch) + ' Cost: ', cost)
                 loss_buff.append(cost)
 
             if(settings['plot_cost']):
+                return loss_buff
                 self.plot.loss(loss_buff)
 
             if(settings['plot_weights']):
@@ -95,24 +112,41 @@ class network:
 
     def run(self):
         X = self.train_X
+        labels = self.train_Y
         Y = X[0:2000]
         X = X[0:2000]
 
-        settings = {
-            'hidden_size': 50,
-            'num_batches': 50,
-            'epochs': 100,
-            'eta': 1e-3,
-            'reg_scale': 0.9,
-            'interactive_plot': False,
-            'plot_dim': (5,10),
-            'plot_cost': False,
-            'plot_weights': True,
-        }
+        idx = []
+        counter = 0
+        for i in range(labels.size):
+            if labels[i] == counter:
+                idx.append(i)
+                counter += 1
 
-        settings['batch_size'] = int(X.shape[0] / settings['num_batches'])
-        print('SETTINGS: ', json.dumps(settings, indent=2))
+        hidden = [30, 50, 100, 250, 500]
+        losses = []
+        for h in hidden:
+            settings = {
+                'hidden_size': h,
+                'num_batches': 50,
+                'epochs': 100,
+                'eta': 1e-3,
+                'reg_scale': 0.0,
+                'interactive_plot': False,
+                'plot_dim': (2,10),
+                'plot_cost': True,
+                'plot_weights': False,
+                'plot_numbers': False,
+                'number_idx': idx,
+                'store_weights': True
+            }
 
-        batches = np.array(np.array_split(X, settings['num_batches']))
+            settings['batch_size'] = int(X.shape[0] / settings['num_batches'])
+            print('SETTINGS: ', json.dumps(settings, indent=2))
 
-        self.train(settings, batches, Y)
+            batches = np.array(np.array_split(X, settings['num_batches']))
+
+            loss = self.train(settings, batches, Y)
+            losses.append(loss)
+
+        self.plot.losses(losses, ['N=30','N=50','N=100','N=250','N=500'], save={'path':'epochs=100_eta=1e-3_reg=0'})

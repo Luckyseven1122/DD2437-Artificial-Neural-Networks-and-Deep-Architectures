@@ -55,3 +55,24 @@ class Plot():
         else:
             plt.pause(1e-12)
         # plt.show()
+
+    def losses(self, loss_list, labels=None, save=None):
+        '''
+        labels = ['str','in','gs'] with len of loss_list
+        '''
+        plt.clf()
+        for i, loss in enumerate(loss_list):
+            x = np.arange(len(loss))
+            if labels == None:
+                plt.plot(x, loss)
+            else:
+                assert len(loss_list) == len(labels)
+                plt.plot(x, loss, label=labels[i])
+        plt.xlabel('epochs')
+        plt.ylabel('mean squared error')
+        if labels != None:
+            plt.legend()
+        if save != None:
+            plt.savefig('./tmp/' + str(save['path']) + '.png')
+        else:
+            plt.show()
