@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 import json
 
 from plot import Plot
-from io_tools import getBindigit, getTargetDigit
+from io_tools import get_training_data, get_testing_data
 
-train_mnist, test_mnist = getBindigit()
-train_mnist = train_mnist[0:2000]
+X, _ = get_training_data()
+Y = X[0:2000]
+X = X[0:2000]
 plot = Plot()
 # -- plot examples --
 # plot.one(train[0])
@@ -27,7 +28,7 @@ def autoencoder(inputs, hidden_size, reg_scale):
     return decode
 
 
-def train(settings, batches, test_mnist):
+def train(settings, batches, Y):
     inputs = tf.placeholder(tf.float32, shape=[None, 784])
     outputs = autoencoder(inputs = inputs,
                           hidden_size = settings['hidden_size'],
@@ -47,8 +48,8 @@ def train(settings, batches, test_mnist):
                 optimizer.run(feed_dict=feed)
 
             print('Epoch: ' + str(epoch) + ' Cost: ', cost)
-        test_img = test_mnist[0:settings['batch_size']]
-        reconstructed = sess.run(outputs, feed_dict={inputs: test_img})
+        Y = Y[0:settings['batch_size']]
+        reconstructed = sess.run(outputs, feed_dict={inputs: Y})
 
         plot.custom(data = reconstructed, rows = 4, cols = 10)
     return
@@ -56,14 +57,16 @@ def train(settings, batches, test_mnist):
 settings = {
     'hidden_size': 500,
     'num_batches': 50,
-    'epochs': 1,
+    'epochs': 9,
     'eta': 1e-3,
     'reg_scale': 0.9
 }
 
-settings['batch_size'] = int(train_mnist.shape[0] / settings['num_batches'])
+
+
+settings['batch_size'] = int(X.shape[0] / settings['num_batches'])
 print('SETTINGS: ', json.dumps(settings, indent=2))
 
-batches = np.array(np.array_split(train_mnist, settings['num_batches']))
+batches = np.array(np.array_split(X, settings['num_batches']))
 
-train(settings, batches, test_mnist)
+train(settings, batches, Y)

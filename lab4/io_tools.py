@@ -16,10 +16,10 @@ def readFile(file):
     returns test, train
             np.array(8000, 784), np.array(2000, 784)
 '''
-def getBindigit():
-    bindigit_trn = readFile('bindigit_trn.csv')
-    bindigit_tst = readFile('bindigit_tst.csv')
-    return bindigit_trn, bindigit_tst
+def get_training_data():
+    train_X = readFile('bindigit_trn.csv')
+    train_Y = readFile('targetdigit_trn.csv')
+    return train_X, train_Y
 
 '''
     8000 vectors with 784 1/0 in each.
@@ -27,8 +27,7 @@ def getBindigit():
     returns test, train
             np.array(8000, 784), np.array(2000, 784)
 '''
-def getTargetDigit():
-    targetdigit_trn = readFile('bindigit_trn.csv')
-    targetdigit_tst = readFile('bindigit_tst.csv')
-    print(targetdigit_trn.shape, targetdigit_tst.shape)
-    return targetdigit_trn, targetdigit_tst
+def get_testing_data():
+    test_X = readFile('bindigit_tst.csv')
+    test_Y =  readFile('targetdigit_tst.csv')
+    return test_X, test_Y
