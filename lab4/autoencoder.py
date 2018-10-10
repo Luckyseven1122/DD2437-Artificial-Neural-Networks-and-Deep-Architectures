@@ -39,6 +39,7 @@ class network:
 
     def train(self, settings, batches, Y):
         loss_buff = []
+        sparse = []
 
         inputs = tf.placeholder(tf.float32, shape=[None, 784])
         outputs = self.autoencoder(inputs = inputs,
@@ -66,33 +67,41 @@ class network:
             for epoch in range(settings['epochs']):
                 for batch_idx, batch in enumerate(batches):
                     feed = { inputs: batch }
-                    if(batch_idx % 30 == 0):
-                        _, cost = sess.run([optimizer, loss], feed_dict=feed)
-
-                        if(settings['interactive_plot']):
-                            Y = Y[0:settings['batch_size']]
-                            r = sess.run(outputs, feed_dict={inputs: Y})
-                            rows, cols = settings['plot_dim']
-                            self.plot.custom(data = r,rows=rows, cols=cols)
-
-                        if(settings['plot_weights']):
-                            W = [w for w in tf.trainable_variables() if w.name == 'fully_connected_1/weights:0'][0]
-                            W = sess.run(W.value())
-                            hidden = W.shape[0]
-                            nodes = W.shape[1]
-                            rows, cols = settings['plot_dim']
-                            assert rows*cols == hidden
-                            self.plot.custom(W, rows, cols, save={'path': epoch})
-
-                        if(settings['plot_numbers']):
-                            ans = Y[settings['number_idx']]
-                            org = self.train_X[settings['number_idx']]
-                            ans = sess.run(outputs, feed_dict={inputs: ans})
-                            piz = np.concatenate((org, ans), axis=0)
-                            rows, cols = settings['plot_dim']
-                            self.plot.custom(data=piz, rows=rows, cols=cols, save={'path': epoch})
-
+                    #if(batch_idx % 30 == 0):
                     optimizer.run(feed_dict=feed)
+
+                cost = sess.run([loss], feed_dict={inputs: Y})
+
+                if(settings['interactive_plot']):
+                    Y = Y[0:settings['batch_size']]
+                    r = sess.run(outputs, feed_dict={inputs: Y})
+                    rows, cols = settings['plot_dim']
+                    self.plot.custom(data = r,rows=rows, cols=cols)
+
+                if(settings['plot_weights']):
+                    W = [w for w in tf.trainable_variables() if w.name == 'fully_connected_1/weights:0'][0]
+                    W = sess.run(W.value())
+                    hidden = W.shape[0]
+                    nodes = W.shape[1]
+                    rows, cols = settings['plot_dim']
+                    assert rows*cols == hidden
+                    self.plot.custom(W, rows, cols, save={'path': epoch})
+
+                if(settings['plot_numbers']):
+                    ans = Y[settings['number_idx']]
+                    org = self.train_X[settings['number_idx']]
+                    ans = sess.run(outputs, feed_dict={inputs: ans})
+                    piz = np.concatenate((org, ans), axis=0)
+                    rows, cols = settings['plot_dim']
+                    self.plot.custom(data=piz, rows=rows, cols=cols, save={'path': epoch})
+
+                if(settings['calculate_avg_sparseness']):
+                    W = [w for w in tf.trainable_variables() if w.name == 'fully_connected_1/weights:0'][0]
+                    W = sess.run(W.value())
+                    sparse.append(np.sum(np.mean(W, axis=1)))
+                    #print(np.mean(np.sum(W,axis=1)))
+                    #sparse.append(np.mean(np.sum(W, axis=0)))
+                    # WTF!?!?!??!?!?
 
                 print('Epoch: ' + str(epoch) + ' Cost: ', cost)
                 loss_buff.append(cost)
@@ -100,6 +109,9 @@ class network:
             if(settings['plot_cost']):
                 return loss_buff
                 self.plot.loss(loss_buff)
+
+            if(settings['calculate_avg_sparseness']):
+                return sparse
 
             if(settings['plot_weights']):
                 W = [w for w in tf.trainable_variables() if w.name == 'fully_connected_1/weights:0'][0]
@@ -140,7 +152,8 @@ class network:
                 'plot_weights': False,
                 'plot_numbers': False,
                 'number_idx': idx,
-                'store_weights': True
+                'store_weights': True,
+                'calculate_avg_sparseness': False
             }
 
             settings['batch_size'] = int(X.shape[0] / settings['num_batches'])
@@ -173,7 +186,7 @@ class network:
             'num_batches': 50,
             'epochs': 30,
             'eta': 1e-3,
-            'reg_scale': 0.9,
+            'reg_scale': 0.0,
             'interactive_plot': False,
             'plot_dim': (12,10),
             'plot_cost': False,
@@ -189,8 +202,8 @@ class network:
 
         batches = np.array(np.array_split(X, settings['num_batches']))
 
-        self.train(settings, batches, X)
-
+        loss = self.train(settings, batches, X)
+        self.plot.loss(loss)
 
     def run(self):
         self.single_run()
