@@ -4,6 +4,7 @@ import tensorflow as tf
 import json
 import imp
 
+from io_tools import get_training_data, get_testing_data
 from plot import Plot
 
 # -- plot examples --
@@ -12,26 +13,31 @@ from plot import Plot
 # plot.custom(data = train[0:15],rows = 3, cols = 5)
 
 class network:
-    def __init__(self, X, Y, test_X, test_Y):
+    def __init__(self, layer_name, settings, hidden_size):
+
+        self.train_X, self.train_Y = get_training_data()
+        self.test_X, self.test_Y = get_testing_data()
+        self.settings = settings
+        self.settings['hidden_size'] = hidden_size 
+
         self.plot = Plot()
-        self.train_X = X
-        self.train_Y = Y
-        self.test_X = test_X
-        self.test_Y = test_Y
+        self.layer_name = layer_name
         #tf = imp.reload(tf)
 
     def __del__(self):
         tf.reset_default_graph()
 
     def autoencoder(self, inputs, hidden_size, reg_scale):
+
         regularizer = tf.contrib.layers.l2_regularizer(scale=reg_scale)
 
-        x = tf.contrib.layers.fully_connected(
-                inputs,
-                hidden_size,
-                weights_initializer=tf.initializers.random_normal,
-                weights_regularizer=regularizer,
-                activation_fn=tf.nn.sigmoid)
+        with tf.variable_scope(self.layer_name):
+            x = tf.contrib.layers.fully_connected(
+                    inputs,
+                    hidden_size,
+                    weights_initializer=tf.initializers.random_normal,
+                    weights_regularizer=regularizer,
+                    activation_fn=tf.nn.sigmoid)
 
         decode = tf.contrib.layers.fully_connected(x, 784, activation_fn=None)
         return decode
@@ -52,6 +58,7 @@ class network:
 
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
+
 
             if settings['store_weights']:
                 try:
@@ -94,8 +101,12 @@ class network:
 
                     optimizer.run(feed_dict=feed)
 
+
                 print('Epoch: ' + str(epoch) + ' Cost: ', cost)
                 loss_buff.append(cost)
+            l1 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.layer_name)
+            return l1
+
 
             if(settings['plot_cost']):
                 return loss_buff
@@ -131,7 +142,7 @@ class network:
             settings = {
                 'hidden_size': h,
                 'num_batches': 50,
-                'epochs': 30,
+                'epochs': 1,
                 'eta': 1e-2,
                 'reg_scale': 0.0,
                 'interactive_plot': False,
@@ -155,43 +166,15 @@ class network:
 
     def single_run(self):
         X = self.train_X
-        labels = self.train_Y
         #Y = X[0:8000]
         X = X[0:8000]
 
+        batches = np.array(np.array_split(X, self.settings['num_batches']))
 
-        idx = []
-        counter = 0
-        for i in range(labels.size):
-            if labels[i] == counter:
-                idx.append(i)
-                counter += 1
-
-
-        settings = {
-            'hidden_size': 120,
-            'num_batches': 50,
-            'epochs': 30,
-            'eta': 1e-3,
-            'reg_scale': 0.9,
-            'interactive_plot': False,
-            'plot_dim': (12,10),
-            'plot_cost': False,
-            'plot_weights': True,
-            'plot_numbers': False,
-            'number_idx': idx,
-            'store_weights': True,
-            'calculate_avg_sparseness': True
-        }
-
-        settings['batch_size'] = int(X.shape[0] / settings['num_batches'])
-        print('SETTINGS: ', json.dumps(settings, indent=2))
-
-        batches = np.array(np.array_split(X, settings['num_batches']))
-
-        self.train(settings, batches, X)
+        return self.train(self.settings, batches, X)
 
 
     def run(self):
-        self.single_run()
+        return self.single_run()
         #self.do_loss()
+

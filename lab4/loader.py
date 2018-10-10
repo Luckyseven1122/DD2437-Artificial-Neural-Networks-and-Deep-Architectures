@@ -1,6 +1,9 @@
 from io_tools import get_training_data, get_testing_data
 import autoencoder as _encoder
+import stacked_autoencoder as _stacked_encoder
 from autoencoder import network
+from stacked_autoencoder import Stacked_ae
+
 import imp
 import sys, traceback
 
@@ -22,11 +25,14 @@ class loader:
             if self.check_yes_no(''):
                 try:
                     imp.reload(_encoder)
+                    imp.reload(_stacked_encoder)
                     from autoencoder import network
-                    network(self.train_X.copy(),
-                            self.train_Y.copy(),
-                            self.test_X.copy(),
-                            self.test_Y.copy()).run()
+                    from  stacked_autoencoder import Stacked_ae
+                    Stacked_ae()
+                    # network(self.train_X.copy(),
+                    #         self.train_Y.copy(),
+                    #         self.test_X.copy(),
+                    #         self.test_Y.copy()).run()
                 except Exception as e:
                      print ("Exception in user code:")
                      print ('-'*60)
@@ -38,3 +44,4 @@ class loader:
 if __name__ == '__main__':
     l = loader()
     l.run()
+
