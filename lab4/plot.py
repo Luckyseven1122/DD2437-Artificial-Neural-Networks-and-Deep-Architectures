@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import gridspec
-# plt.ion()
+
+plt.ion()
 
 class Plot():
     def __init__(self):
@@ -20,35 +21,34 @@ class Plot():
     def nine(self, data):
         assert data.shape == (9, 784)
         self.custom(data, 3,3)
-    
-#     def custom(self, data, rows, cols):
-#         gs = gridspec.GridSpec(rows, cols)
-#         gs.update(wspace=0, hspace=0)
-#         for i in range(rows*cols): 
-#             ax = plt.subplot(gs[i])
-#             ax.set_xticklabels([])
-#             ax.set_yticklabels([])
-#             ax.set_aspect('equal')
-#             ax.imshow(data[i].reshape(28,28))
-#         plt.pause(1e-12)
-
+       
     def loss(self, loss):
         x = np.arange(len(loss))
         plt.plot(x, loss)
         plt.show()
-
-    def custom(self, data, rows, cols):
-        plt.clf()
+    
+    def get_img_matrix(self, data, rows, cols):
         render = np.zeros((rows*28, cols*28))
         for r in range(rows):
             row = np.zeros((28, cols*28))
             for c in range(cols):
                 row[:,c*28:(c+1)*28] = data[c*rows+r].reshape(28,28)
             render[r*28:(r+1)*28,:] = row
+        return render
+    
+    def custom(self, data, rows, cols, cost, epoch, i, eta, hidden_size):
+
+        plt.clf()
+        render = self.get_img_matrix(data, rows,cols)
+
         ax = plt.gca()
+        fig = plt.gcf()
+        title = 'Epoch:\t\t{0}\nCost:\t\t{1}\neta:\t\t{2}\n#hidden:   {3}'.format(epoch,cost,eta, hidden_size).expandtabs()
+        fig.suptitle(title ,fontsize=24, x=0 , y=0.99, horizontalalignment='left')
         plt.imshow(render)
         ax.axes.get_yaxis().set_visible(False)
         ax.axes.get_xaxis().set_visible(False)
 
-        plt.pause(1e-12)
+        plt.pause(1e-10)
+        fig.savefig('gifs/tmp/'+str(i)+'.png')
         # plt.show()

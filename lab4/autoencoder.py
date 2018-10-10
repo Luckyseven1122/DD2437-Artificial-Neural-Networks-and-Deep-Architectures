@@ -2,11 +2,24 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import json
+import collections
 
 from plot import Plot
 from io_tools import get_training_data, get_testing_data
 
 X, _ = get_training_data()
+X_test, X_idx = get_testing_data()
+unique_digits = {}
+
+for index, digit in zip(np.arange(X_test.shape[0]),X_idx.reshape(X_idx.shape[0])):
+    if(digit not in unique_digits):
+        unique_digits[digit] = [index]
+    else:
+        unique_digits[digit].append(index)
+
+unique_digits = collections.OrderedDict(sorted(unique_digits.items()))
+ten_digits_idx = [v[0] for k,v in unique_digits.items()]
+
 Y = X[0:2000]
 X = X[0:2000]
 plot = Plot()
@@ -46,18 +59,29 @@ def train(settings, batches, Y):
             plt.show() 
             plt.figure(figsize= settings['plot_dim'])
 
+            # test1_idx, test2_idx = np.random.randint(settings['n_points'], size=2)
+            feed_test = {inputs: X_test[ten_digits_idx]}
+        i = 0
         for epoch in range(settings['epochs']):
             for batch_idx, batch in enumerate(batches):
                 feed = { inputs: batch }
-                if(batch_idx % 30 == 0):
+
+                if(batch_idx % 50 == 0):
                     _, cost = sess.run([optimizer, loss], feed_dict=feed)
 
                     if(settings['interactive_plot']):
-                        Y = Y[0:settings['batch_size']]
-                        r = sess.run(outputs, feed_dict={inputs: Y})
+                        r = sess.run(outputs, feed_dict=feed_test)
                         rows, cols = settings['plot_dim']
-                        plot.custom(data = r,rows=rows,cols=cols)
-
+                        r = np.vstack([X_test[ten_digits_idx],r])
+                        plot.custom(data = r,
+                                    rows=rows,
+                                    cols=cols, 
+                                    cost=str(round(cost,5)), 
+                                    epoch=str(epoch), 
+                                    i=i,
+                                    eta=settings['eta'],
+                                    hidden_size=settings['hidden_size'])
+                        i += 1
                 optimizer.run(feed_dict=feed)
 
             print('Epoch: ' + str(epoch) + ' Cost: ', cost)
@@ -67,15 +91,18 @@ def train(settings, batches, Y):
             plot.loss(loss_buff)
     return 
 
+''' debuging keep same random numbers'''
+np.random.seed(0)
 
 settings = {
+    'n_points': X.shape[0],
     'hidden_size': 500,
     'num_batches': 50,
     'epochs': 50,
     'eta': 1e-3,
-    'reg_scale': 0.9,
-    'interactive_plot': True,
-    'plot_dim': (10,4),
+    'reg_scale': 0.2,
+    'interactive_plot': False,
+    'plot_dim': (10,2),
     'plot_cost': True
 }
 
