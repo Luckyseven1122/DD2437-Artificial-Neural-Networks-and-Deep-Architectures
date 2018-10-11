@@ -32,10 +32,16 @@ class Plot():
 #             ax.imshow(data[i].reshape(28,28))
 #         plt.pause(1e-12)
 
-    def loss(self, loss):
+    def loss(self, loss, label, save=None):
+        plt.clf()
         x = np.arange(len(loss))
-        plt.plot(x, loss)
-        plt.show()
+        plt.plot(x, loss, label=label)
+        plt.xlabel('epochs')
+        plt.ylabel('mean squared error')
+        if save != None:
+            plt.savefig('./tmp/' + str(save['path']) + '.png')
+        else:
+            plt.show()
 
     def custom(self, data, rows, cols, save=None):
         plt.clf()
@@ -66,7 +72,6 @@ class Plot():
             if labels == None:
                 plt.plot(x, loss)
             else:
-                assert len(loss_list) == len(labels)
                 plt.plot(x, loss, label=labels[i])
         plt.xlabel('epochs')
         plt.ylabel('mean squared error')

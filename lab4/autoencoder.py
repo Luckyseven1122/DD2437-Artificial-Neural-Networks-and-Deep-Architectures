@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import json
-import imp
+import json, imp, re, os.path
 
 from plot import Plot
 
@@ -12,18 +11,35 @@ from plot import Plot
 # plot.custom(data = train[0:15],rows = 3, cols = 5)
 
 class network:
+    def one_hot_labels(self, y):
+        labels = np.array([np.zeros(10)]*y.shape[0])
+        for i, l in enumerate(y):
+            labels[i][l[0]] = 1
+        return labels
+
     def __init__(self, X, Y, test_X, test_Y):
         self.plot = Plot()
         self.train_X = X
-        self.train_Y = Y
+        self.train_Y = self.one_hot_labels(Y)
         self.test_X = test_X
-        self.test_Y = test_Y
+        self.test_Y = self.one_hot_labels(test_Y)
+
         #tf = imp.reload(tf)
 
     def __del__(self):
         tf.reset_default_graph()
 
-    def autoencoder(self, inputs, hidden_size, reg_scale):
+    def _config_to_path(self, conf):
+        N = 'N=' + str(conf['hidden']) # int 120,
+        ETA = '_eta=' + str(conf['eta']) #float 1e-3,
+        LAMBDA = '_lambda=' + str(conf['reg']) #float 0.0,
+        N_BATCHES = '_n_batches=' + str(conf['num_batches']) #int 50,
+        EPOCHS = '_epochs=' + str(conf['epochs']) # int 50
+        filename = N + ETA + LAMBDA + N_BATCHES + EPOCHS
+        path_name = re.sub(r'[^\w\s\/-=]','', filename)
+        return path_name
+
+    def autoencoder(self, inputs, input_size, hidden_size, reg_scale):
         regularizer = tf.contrib.layers.l2_regularizer(scale=reg_scale)
 
         x = tf.contrib.layers.fully_connected(
@@ -33,178 +49,219 @@ class network:
                 weights_regularizer=regularizer,
                 activation_fn=tf.nn.sigmoid)
 
-        decode = tf.contrib.layers.fully_connected(x, 784, activation_fn=None)
+        decode = tf.contrib.layers.fully_connected(x, input_size, activation_fn=None)
         return decode
 
+    def classifier(self, inputs, output_size, weights, biases, reg_scale):
+        regularizer = tf.contrib.layers.l2_regularizer(scale=reg_scale)
+
+        x = None
+        for i in range(0,len(weights)):
+            x = tf.contrib.layers.fully_connected(
+                    inputs=inputs if i < 1 else x,
+                    num_outputs=weights[i].shape[1],
+                    weights_initializer=tf.initializers.random_normal,
+                    weights_regularizer=regularizer,
+                    activation_fn=tf.nn.sigmoid)
+
+        # find all variables
+        W = [w for w in tf.trainable_variables() if 'weight' in w.name]
+        B = [b for b in tf.trainable_variables() if 'biases' in b.name]
+
+        assert len(W) == len(weights)
+        assert len(B) == len(biases)
+
+        # add pretrained weights
+        for i in range(len(W)):
+            W[i].assign(weights[i], True)
+            B[i].assign(biases[i], True)
+
+        output = tf.contrib.layers.fully_connected(x, output_size)
+        return output
 
     def train(self, settings, batches, Y):
         loss_buff = []
+        loss_test_buff = []
         sparse = []
 
-        inputs = tf.placeholder(tf.float32, shape=[None, 784])
-        outputs = self.autoencoder(inputs = inputs,
-                              hidden_size = settings['hidden_size'],
-                              reg_scale= settings['reg_scale'])
+        inputs = tf.placeholder(tf.float32, shape=[None, settings['input_size']])
+        labels = tf.placeholder(tf.float32, shape=[None, 10])
 
-        loss = tf.reduce_mean(tf.square(inputs - outputs))
+        if settings['outputs'] == 'autoencoder':
+            outputs = self.autoencoder(inputs = inputs,
+                                       input_size = settings['input_size'],
+                                       hidden_size = settings['hidden'],
+                                       reg_scale= settings['reg'])
+
+            loss = tf.reduce_mean(tf.square(inputs - outputs))
+        else:
+            outputs = self.classifier(inputs = inputs,
+                                      output_size = settings['output_size'],
+                                      weights = settings['W'],
+                                      biases = settings['b'],
+                                      reg_scale = settings['reg'])
+
+            cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(logits=outputs, labels=labels)
+
+            correct_prediction = tf.equal(tf.argmax(labels, 1), tf.argmax(outputs, 1))
+            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+            loss = tf.reduce_mean(cross_entropy)
+            acc = 100*tf.reduce_mean(tf.to_float(tf.equal(tf.argmax(outputs, 1), tf.argmax(labels, 1))))
+
         optimizer = tf.train.AdamOptimizer(learning_rate=settings['eta']).minimize(loss)
-
         saver = tf.train.Saver()
 
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
 
-            if settings['store_weights']:
-                try:
-                    save.restore(sess, "./data/__tfcache__/default.ckpt")
-                except:
-                    saver.save(sess, "./data/__tfcache__/default.ckpt")
+            if settings['outputs'] == 'autoencoder':
+                for epoch in range(settings['epochs']):
+                    for batch_idx, batch in enumerate(batches):
+                        feed = { inputs: batch }
+                        #if(batch_idx % 30 == 0):
+                        optimizer.run(feed_dict=feed)
 
-            if(settings['interactive_plot']):
-                #plt.show()
-                plt.figure(figsize=settings['plot_dim'])
+                    cost = sess.run([loss], feed_dict={inputs: Y})
+                    print('Epoch: ' + str(epoch) + ' Cost: ', cost)
+                    loss_buff.append(cost)
 
-            for epoch in range(settings['epochs']):
-                for batch_idx, batch in enumerate(batches):
-                    feed = { inputs: batch }
-                    #if(batch_idx % 30 == 0):
-                    optimizer.run(feed_dict=feed)
-
-                cost = sess.run([loss], feed_dict={inputs: Y})
-
-                if(settings['interactive_plot']):
-                    Y = Y[0:settings['batch_size']]
-                    r = sess.run(outputs, feed_dict={inputs: Y})
-                    rows, cols = settings['plot_dim']
-                    self.plot.custom(data = r,rows=rows, cols=cols)
-
-                if(settings['plot_weights']):
-                    W = [w for w in tf.trainable_variables() if w.name == 'fully_connected_1/weights:0'][0]
-                    W = sess.run(W.value())
-                    hidden = W.shape[0]
-                    nodes = W.shape[1]
-                    rows, cols = settings['plot_dim']
-                    assert rows*cols == hidden
-                    self.plot.custom(W, rows, cols, save={'path': epoch})
-
-                if(settings['plot_numbers']):
-                    ans = Y[settings['number_idx']]
-                    org = self.train_X[settings['number_idx']]
-                    ans = sess.run(outputs, feed_dict={inputs: ans})
-                    piz = np.concatenate((org, ans), axis=0)
-                    rows, cols = settings['plot_dim']
-                    self.plot.custom(data=piz, rows=rows, cols=cols, save={'path': epoch})
-
-                if(settings['calculate_avg_sparseness']):
-                    W = [w for w in tf.trainable_variables() if w.name == 'fully_connected_1/weights:0'][0]
-                    W = sess.run(W.value())
-                    sparse.append(np.sum(np.mean(W, axis=1)))
-                    #print(np.mean(np.sum(W,axis=1)))
-                    #sparse.append(np.mean(np.sum(W, axis=0)))
-                    # WTF!?!?!??!?!?
-
-                print('Epoch: ' + str(epoch) + ' Cost: ', cost)
-                loss_buff.append(cost)
-
-            if(settings['plot_cost']):
-                return loss_buff
-                self.plot.loss(loss_buff)
-
-            if(settings['calculate_avg_sparseness']):
-                return sparse
-
-            if(settings['plot_weights']):
-                W = [w for w in tf.trainable_variables() if w.name == 'fully_connected_1/weights:0'][0]
+                # extract weights
+                W = tf.trainable_variables()[0]
+                b = tf.trainable_variables()[1]
                 W = sess.run(W.value())
-                hidden = W.shape[0]
-                nodes = W.shape[1]
-                rows, cols = settings['plot_dim']
-                assert rows*cols == hidden
-                self.plot.custom(W, rows, cols)
+                b = sess.run(b.value())
+                sess.close()
+            else:
+                for epoch in range(settings['epochs']):
+                    for idx, _ in enumerate(batches[0]):
+                        feed = { inputs: batches[0][idx], labels: batches[1][idx] }
+                        #if(batch_idx % 30 == 0):
+                        sess.run([optimizer], feed_dict=feed)
 
-    def do_loss(self):
-        X = self.train_X
-        labels = self.train_Y
-        #Y = X[0:8000]
-        X = X[0:8000]
+                    cost = sess.run([loss], feed_dict={inputs: settings['train_X'], labels: settings['train_Y']})
+                    t_cost = sess.run([loss], feed_dict={inputs: settings['test_X'], labels: settings['test_Y']})
+                    print('Epoch: ' + str(epoch) + ' Cost: ', cost, 'test:', t_cost)
+                    loss_buff.append(cost)
+                    loss_test_buff.append(t_cost)
+                finalAccuracy = sess.run(accuracy, feed_dict={inputs: settings['test_X'], labels: settings['test_Y']})
+                print('Final accuracy:',finalAccuracy)
+                return loss_buff, loss_test_buff
 
-
-
-        idx = []
-        counter = 0
-        for i in range(labels.size):
-            if labels[i] == counter:
-                idx.append(i)
-                counter += 1
-
-        hidden = [30, 50, 100, 250, 500]
-        losses = []
-        for h in hidden:
-            settings = {
-                'hidden_size': h,
-                'num_batches': 50,
-                'epochs': 30,
-                'eta': 1e-2,
-                'reg_scale': 0.0,
-                'interactive_plot': False,
-                'plot_dim': (2,10),
-                'plot_cost': True,
-                'plot_weights': False,
-                'plot_numbers': False,
-                'number_idx': idx,
-                'store_weights': True,
-                'calculate_avg_sparseness': False
-            }
-
-            settings['batch_size'] = int(X.shape[0] / settings['num_batches'])
-            print('SETTINGS: ', json.dumps(settings, indent=2))
-
-            batches = np.array(np.array_split(X, settings['num_batches']))
-
-            loss = self.train(settings, batches, X)
-            losses.append(loss)
-
-        self.plot.losses(losses, ['N=30','N=50','N=100','N=250','N=500'], save={'path':'epochs=30_eta=1e-2_reg=1e-1'})
-
-    def single_run(self):
-        X = self.train_X
-        labels = self.train_Y
-        #Y = X[0:8000]
-        X = X[0:8000]
+        # kill graph before iteration
+        tf.reset_default_graph()
+        return loss_buff, W, b
 
 
-        idx = []
-        counter = 0
-        for i in range(labels.size):
-            if labels[i] == counter:
-                idx.append(i)
-                counter += 1
+    def run(self):
+        # setup data for build phase and train phase
+        train_X = self.train_X
+        train_Y_build = train_X.copy()
+        train_Y = self.train_Y
+        test_X = self.test_X
+        test_Y_build = test_X.copy()
+        test_Y = self.test_Y
 
 
         settings = {
-            'hidden_size': 120,
-            'num_batches': 50,
-            'epochs': 30,
-            'eta': 1e-3,
-            'reg_scale': 0.0,
-            'interactive_plot': False,
-            'plot_dim': (12,10),
-            'plot_cost': False,
-            'plot_weights': True,
-            'plot_numbers': False,
-            'number_idx': idx,
-            'store_weights': True,
-            'calculate_avg_sparseness': True
+            'BUILD_CONF': {
+                'layers': [
+                    {
+                        'input_size': train_X.shape[1],
+                        'X': train_X,
+                        'Y': train_Y_build,
+                        'hidden': 500,
+                        'eta': 1e-3,
+                        'reg': 1e-3, # 1e-3
+                        'num_batches': 50,
+                        'epochs': 100,
+                        'outputs': 'autoencoder'
+                    },
+                    {
+                        'input_size': None,
+                        'X': None,
+                        'Y': None,
+                        'hidden': 120,
+                        'eta': 1e-3,
+                        'reg': 1e-3,
+                        'num_batches': 20,
+                        'epochs': 70,
+                        'outputs': 'autoencoder'
+                    }
+                ],
+                'save_weights': False,
+            },
+            'TEST_CONF': {
+                'hidden': 'multilayer',
+                'input_size': train_X.shape[1],
+                'num_batches': 50,
+                'epochs': 50,
+                'eta': 7e-4,
+                'reg': 1e-4,
+                'plot_dim': (12,10),
+                'plot_cost': False,
+                'outputs': 'classifier',
+                'test_X': test_X,
+                'test_Y': test_Y,
+                'train_X': train_X,
+                'train_Y': train_Y,
+                'output_size': 10,
+                'W' : [],
+                'b' : []
+            }
         }
 
-        settings['batch_size'] = int(X.shape[0] / settings['num_batches'])
-        print('SETTINGS: ', json.dumps(settings, indent=2))
 
-        batches = np.array(np.array_split(X, settings['num_batches']))
+        # build phase
+        for layer in settings['BUILD_CONF']['layers']:
 
-        loss = self.train(settings, batches, X)
-        self.plot.loss(loss)
+            # setup data for next iteration
+            if layer['input_size'] == None:
+                assert len(settings['TEST_CONF']['W']) > 0
+                layer['X'] = settings['TEST_CONF']['W'][-1]
+                layer['Y'] = settings['TEST_CONF']['W'][-1]
+                layer['input_size'] = layer['X'].shape[1]
 
-    def run(self):
-        self.single_run()
-        #self.do_loss()
+            print(layer['X'].shape)
+            save_path = self._config_to_path(layer)
+
+            layer['batch_size'] = int(layer['input_size'] / layer['num_batches'])
+
+            # make layer settings printable
+            printable = layer.copy()
+            del printable['X']
+            del printable['Y']
+            del printable['outputs']
+            print('SETTINGS: ', json.dumps(printable, indent=2))
+
+            # setup batches
+            batches = np.array(np.array_split(layer['X'], layer['num_batches']))
+
+            # train and store weights
+            loss, W, b = self.train(layer, batches, layer['Y'])
+            settings['TEST_CONF']['W'].append(W)
+            settings['TEST_CONF']['b'].append(b)
+
+            if settings['BUILD_CONF']['save_weights']:
+                np.save('./data/__tfcache__/' + save_path + '_W', W)
+                np.save('./data/__tfcache__/' + save_path + '_b', b)
+
+            self.plot.loss(loss, label=['N=' + str(layer['hidden'])], save={'path': save_path+'_loss'})
+
+
+        # testing phase
+
+        print(settings['TEST_CONF']['train_X'].shape)
+        print(settings['TEST_CONF']['train_Y'].shape)
+
+        save_path = self._config_to_path(settings['TEST_CONF'])
+
+        settings['TEST_CONF']['batch_size'] = int(settings['TEST_CONF']['input_size'] / settings['TEST_CONF']['num_batches'])
+
+        batches = [np.array(np.array_split(settings['TEST_CONF']['train_X'], settings['TEST_CONF']['num_batches'])),
+                   np.array(np.array_split(settings['TEST_CONF']['train_Y'], settings['TEST_CONF']['num_batches']))]
+
+        # train and store weights
+        train_loss, test_loss = self.train(settings['TEST_CONF'], batches, settings['TEST_CONF']['train_Y'])
+
+        #print(test_loss)
