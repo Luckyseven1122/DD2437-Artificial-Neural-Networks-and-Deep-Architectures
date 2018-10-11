@@ -37,14 +37,14 @@ class Plot():
         plt.plot(x, loss)
         plt.show()
 
-    def custom(self, data, rows, cols, save=None):
+    def custom(self, data, rows, cols, save=None, dims=(32,16)):
         plt.clf()
-        render = np.zeros((rows*28, cols*28))
+        render = np.zeros((rows*dims[0], cols*dims[1]))
         for r in range(rows):
-            row = np.zeros((28, cols*28))
+            row = np.zeros((dims[0], cols*dims[1]))
             for c in range(cols):
-                row[:,c*28:(c+1)*28] = data[c*rows+r].reshape(28,28)
-            render[r*28:(r+1)*28,:] = row
+                row[:,c*dims[1]:(c+1)*dims[1]] = data[c*rows+r].reshape(dims)
+            render[r*dims[0]:(r+1)*dims[0],:] = row
         ax = plt.gca()
         plt.imshow(render, cmap='gray')
         ax.axes.get_yaxis().set_visible(False)
@@ -54,7 +54,7 @@ class Plot():
             plt.savefig('./tmp/' + str(save['path']) + '.png')
         else:
             plt.pause(1e-12)
-        # plt.show()
+        plt.show(block=True)
 
     def losses(self, loss_list, labels=None, save=None):
         '''
