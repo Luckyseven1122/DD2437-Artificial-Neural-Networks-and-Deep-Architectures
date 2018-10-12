@@ -21,17 +21,6 @@ class Plot():
         assert data.shape == (9, 784)
         self.custom(data, 3,3)
 
-#     def custom(self, data, rows, cols):
-#         gs = gridspec.GridSpec(rows, cols)
-#         gs.update(wspace=0, hspace=0)
-#         for i in range(rows*cols):
-#             ax = plt.subplot(gs[i])
-#             ax.set_xticklabels([])
-#             ax.set_yticklabels([])
-#             ax.set_aspect('equal')
-#             ax.imshow(data[i].reshape(28,28))
-#         plt.pause(1e-12)
-
     def loss(self, loss):
         x = np.arange(len(loss))
         plt.plot(x, loss)
@@ -67,7 +56,11 @@ class Plot():
                 plt.plot(x, loss)
             else:
                 assert len(loss_list) == len(labels)
-                plt.plot(x, loss, label=labels[i])
+                style = labels[i].split(' ')[0]
+                if(style == 'test'):
+                    plt.plot(x, loss, label=labels[i])
+                else:
+                    plt.plot(x, loss, label=labels[i], linestyle='dashed')
         plt.xlabel('epochs')
         plt.ylabel('mean squared error')
         if labels != None:
@@ -76,3 +69,23 @@ class Plot():
             plt.savefig('./tmp/' + str(save['path']) + '.png')
         else:
             plt.show()
+'''
+plot = Plot()
+cost_layer_500_30_test = np.load('cost_layer_500_30_test.npy')
+cost_layer_500_50_test = np.load('cost_layer_500_50_test.npy')
+cost_layer_500_100_test = np.load('cost_layer_500_100_test.npy')
+cost_layer_500_250_test = np.load('cost_layer_500_250_test.npy')
+
+cost_layer_500_30_train = np.load('cost_layer_500_30_train.npy')
+cost_layer_500_50_train = np.load('cost_layer_500_50_train.npy')
+cost_layer_500_100_train = np.load('cost_layer_500_100_train.npy')
+cost_layer_500_250_train = np.load('cost_layer_500_250_train.npy')
+
+data = [cost_layer_500_30_test, cost_layer_500_50_test, cost_layer_500_100_test, cost_layer_500_250_test,
+        cost_layer_500_30_train, cost_layer_500_50_train, cost_layer_500_100_train, cost_layer_500_250_train]
+
+test_labels = ['test N=30','test N=50', 'test N=100', 'test N=250','train N=30','train N=50', 'train N=100', 'train N=250']
+plot.losses(data, test_labels)
+
+plt.show(block=True)
+'''

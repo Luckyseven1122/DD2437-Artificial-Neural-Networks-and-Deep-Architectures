@@ -41,7 +41,8 @@ class Stacked_ae:
 
         settings['batch_size'] = int(self.train_X.shape[0] / settings['num_batches'])
 
-        l1_size, l2_size, l3_size = 512, 512, 10
+        # 40, 30, 20, 15
+        l1_size, l2_size, l3_size= 500, 50, 10
         w1,b1 = network(layer_name='l1', 
                                data=self.train_X, 
                                settings=settings, hidden_size = l1_size, n_input = 784).run()
@@ -54,46 +55,70 @@ class Stacked_ae:
                                data=w2, 
                                settings=settings, hidden_size = l3_size, n_input = l2_size).run()
 
+        # w4,b4= network(layer_name='l4', 
+        #                        data=w3, 
+        #                        settings=settings, hidden_size = l4_size, n_input = l3_size).run()
+
         inputs = tf.placeholder(tf.float32, shape=[None, 784])
 
         self.w1_placeholder = tf.Variable(tf.placeholder_with_default(input = w1, shape=[784, l1_size]))
         self.w2_placeholder = tf.Variable(tf.placeholder_with_default(input = w2, shape=[l1_size,l2_size]))
         self.w3_placeholder = tf.Variable(tf.placeholder_with_default(input = w3, shape=[l2_size,l3_size]))
+        # self.w4_placeholder = tf.Variable(tf.placeholder_with_default(input = w4, shape=[l3_size,l4_size]))
 
         self.b1_placeholder = tf.Variable(tf.placeholder_with_default(input = b1, shape=[l1_size]))
         self.b2_placeholder = tf.Variable(tf.placeholder_with_default(input = b2, shape=[l2_size]))
         self.b3_placeholder = tf.Variable(tf.placeholder_with_default(input = b3, shape=[l3_size]))
+        # self.b4_placeholder = tf.Variable(tf.placeholder_with_default(input = b4, shape=[l4_size]))
 
         encoded = self.encode(inputs)
 
         true_labels = tf.placeholder(tf.float32, shape=[None,10])
 
         one_hot_labels = self.one_hot_labels(self.train_Y)
+        one_hot_labels_test = self.one_hot_labels(self.test_Y)
 
         loss = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits_v2(
                 logits=encoded, labels=true_labels))
 
         # optimizer = tf.train.AdamOptimizer(learning_rate=1e-3).minimize(loss)
-        optimizer = tf.train.RMSPropOptimizer(1e-3).minimize(loss)
+        optimizer = tf.train.RMSPropOptimizer(1e-4).minimize(loss)
 
         batches = np.array(np.array_split(self.train_X, settings['num_batches']))
         batches_labels = np.array(np.array_split(one_hot_labels, settings['num_batches']))
         
-        settings['epochs'] = 100
+        settings['epochs'] = 400
+        costs_test, costs_train = [], []
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             for epoch in range(settings['epochs']):
                 for batch_idx, batch in enumerate(batches):
                     feed = { inputs: batch, true_labels: batches_labels[batch_idx]}
                     _, cost = sess.run([optimizer, loss], feed_dict=feed)
+                
 
-                probs = sess.run(encoded, feed_dict={inputs: self.test_X})
+
+
+                probs,c = sess.run([encoded, loss], feed_dict={inputs: self.test_X, true_labels: one_hot_labels_test})
+                
                 acc = self.accuracy(probs) 
-                print('Epoch:\t', np.round(epoch,3) ,' Cost:\t', np.round(cost, 5), ' Accuracy:\t', np.round(acc,4))
+                print('Epoch:\t', np.round(epoch,3) ,' Cost:\t', np.round(c,5), ' Accuracy:\t', np.round(acc,4))
+
+
+                probs_test,c_t = sess.run([encoded, loss], feed_dict={inputs: self.train_X, true_labels: one_hot_labels})
+
+                
+                costs_test.append(c)
+                costs_train.append(c_t)
 
             # probs = sess.run(encoded, feed_dict={inputs: self.test_X})
-
+        np.save('cost_layer_500_50_15_train_BEST', np.array(costs_train))
+        np.save('cost_layer_500_50_15_test_BEST', np.array(costs_test))
+    
+        # ACC second, 250: 83 %, 100: 86 %, 50: 86 %, 30: 86 %
+        # ACC third 15 = 86 % 20 = 85 %, 30 = 85 %, 40: 85 %
+    def confusion(self, probs):
         predictions = np.argmax(probs, axis=1)
         real = self.test_Y.reshape(self.test_Y.shape[0])
         confusion = np.zeros((10,10))
@@ -101,7 +126,8 @@ class Stacked_ae:
         for pred, exp in zip(predictions, real):
             confusion[pred][exp] += 1
         print(confusion)
-        
+
+
     def accuracy(self, probs):
         pred = np.argmax(probs, axis=1)
         real = self.test_Y.reshape(self.test_Y.shape[0])
@@ -116,9 +142,8 @@ class Stacked_ae:
     
     def encode(self, x):
         l1 = self.g(tf.add(tf.matmul(x, self.w1_placeholder), self.b1_placeholder))
-        # l1 = tf.nn.dropout(l1, 0.9)
         l2 = self.g(tf.add(tf.matmul(l1, self.w2_placeholder), self.b2_placeholder))
-        l2 = tf.nn.dropout(l2,0.9)
+        # l3 = self.g(tf.add(tf.matmul(l2, self.w3_placeholder), self.b3_placeholder))
         encoded = tf.add(tf.matmul(l2, self.w3_placeholder), self.b3_placeholder)
         return encoded 
     

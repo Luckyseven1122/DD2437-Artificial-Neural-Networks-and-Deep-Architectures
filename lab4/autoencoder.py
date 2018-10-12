@@ -35,7 +35,6 @@ class network:
                 weights_regularizer=regularizer,
                 activation_fn=tf.nn.sigmoid)
 
-        x = tf.nn.dropout(x, 0.6)
         decode = tf.contrib.layers.fully_connected(x, self.n_input, activation_fn=None)
         return decode
 
